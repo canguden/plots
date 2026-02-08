@@ -9,30 +9,52 @@ import type {
   EventsResponse,
 } from "@plots/ui";
 
+function formatDateForClickHouse(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 function getDateRange(range: string): { start: string; end: string } {
   const now = new Date();
-  const end = now.toISOString().split("T")[0];
+  const end = formatDateForClickHouse(now);
   
   let start: Date;
   switch (range) {
     case "today":
-      start = new Date(now.setHours(0, 0, 0, 0));
-      break;
-    case "yesterday":
-      start = new Date(now.setDate(now.getDate() - 1));
+      start = new Date();
       start.setHours(0, 0, 0, 0);
       break;
+    case "yesterday":
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      start = yesterday;
+      break;
     case "7d":
-      start = new Date(now.setDate(now.getDate() - 7));
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+      start = sevenDaysAgo;
       break;
     case "30d":
-      start = new Date(now.setDate(now.getDate() - 30));
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      thirtyDaysAgo.setHours(0, 0, 0, 0);
+      start = thirtyDaysAgo;
       break;
     default:
-      start = new Date(now.setDate(now.getDate() - 7));
+      const defaultStart = new Date();
+      defaultStart.setDate(defaultStart.getDate() - 7);
+      defaultStart.setHours(0, 0, 0, 0);
+      start = defaultStart;
   }
   
-  return { start: start.toISOString().split("T")[0], end };
+  return { start: formatDateForClickHouse(start), end };
 }
 
 export async function getOverview(
@@ -46,12 +68,12 @@ export async function getOverview(
   const statsResult = await client.query({
     query: `
       SELECT
-        uniq(*) as visitors,
+        count(*) as visitors,
         count(*) as pageviews
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
     `,
     query_params: { projectId, start, end },
     format: "JSONEachRow",
@@ -66,11 +88,11 @@ export async function getOverview(
     query: `
       SELECT
         toDate(ts) as date,
-        uniq(*) as value
+        count(*) as value
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
       GROUP BY date
       ORDER BY date
     `,
@@ -85,12 +107,12 @@ export async function getOverview(
     query: `
       SELECT
         path,
-        uniq(*) as visitors,
+        count(*) as visitors,
         count(*) as pageviews
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
       GROUP BY path
       ORDER BY visitors DESC
       LIMIT 5
@@ -132,12 +154,12 @@ export async function getPages(
     query: `
       SELECT
         path,
-        uniq(*) as visitors,
+        count(*) as visitors,
         count(*) as pageviews
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
       GROUP BY path
       ORDER BY visitors DESC
     `,
@@ -169,12 +191,12 @@ export async function getReferrers(
     query: `
       SELECT
         referrer as domain,
-        uniq(*) as visitors,
+        count(*) as visitors,
         count(*) as pageviews
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
         AND referrer != ''
       GROUP BY domain
       ORDER BY visitors DESC
@@ -206,11 +228,11 @@ export async function getCountries(
     query: `
       SELECT
         country,
-        uniq(*) as visitors
+        count(*) as visitors
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
       GROUP BY country
       ORDER BY visitors DESC
     `,
@@ -243,11 +265,11 @@ export async function getDevices(
     query: `
       SELECT
         device,
-        uniq(*) as visitors
+        count(*) as visitors
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
       GROUP BY device
       ORDER BY visitors DESC
     `,
@@ -259,11 +281,11 @@ export async function getDevices(
     query: `
       SELECT
         browser,
-        uniq(*) as visitors
+        count(*) as visitors
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
       GROUP BY browser
       ORDER BY visitors DESC
     `,
@@ -303,11 +325,11 @@ export async function getEvents(
       SELECT
         event as name,
         count(*) as count,
-        uniq(*) as uniqueVisitors
+        count(*) as uniqueVisitors
       FROM events
       WHERE project_id = {projectId: String}
-        AND ts >= toDate({start: String})
-        AND ts <= toDate({end: String})
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
         AND event != 'pageview'
       GROUP BY name
       ORDER BY count DESC

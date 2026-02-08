@@ -1,16 +1,61 @@
-import { createCliRenderer, TextAttributes } from "@opentui/core";
+#!/usr/bin/env bun
+import { createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
+import { App } from "./app";
+import { isLoggedIn, getToken } from "./auth";
+import { loginCommand } from "./commands/login";
+import { logoutCommand } from "./commands/logout";
+import { initCommand } from "./commands/init";
 
-function App() {
-  return (
-    <box alignItems="center" justifyContent="center" flexGrow={1}>
-      <box justifyContent="center" alignItems="flex-end">
-        <ascii-font font="tiny" text="Plots" />
-        <text attributes={TextAttributes.DIM}>What will you build?</text>
-      </box>
-    </box>
-  );
+// Parse command from argv
+const command = process.argv[2];
+
+async function main() {
+  // Handle commands
+  switch (command) {
+    case "login":
+      await loginCommand();
+      break;
+    
+    case "logout":
+      await logoutCommand();
+      break;
+    
+    case "init":
+      await initCommand();
+      break;
+    
+    case undefined:
+    case "dashboard":
+      // Open TUI dashboard
+      const loggedIn = await isLoggedIn();
+      if (!loggedIn) {
+        console.error("Error: Not logged in. Run 'plots login' first");
+        process.exit(1);
+      }
+      
+      // Set auth token for API calls
+      const token = await getToken();
+      if (token) {
+        process.env.BEARER_TOKEN = token;
+      }
+      
+      const renderer = await createCliRenderer();
+      createRoot(renderer).render(<App />);
+      break;
+    
+    default:
+      console.error(`Unknown command: ${command}`);
+      console.log("\nAvailable commands:");
+      console.log("  plots             Open dashboard");
+      console.log("  plots login       Authenticate");
+      console.log("  plots init        Generate tracking script");
+      console.log("  plots logout      Remove stored token");
+      process.exit(1);
+  }
 }
 
-const renderer = await createCliRenderer();
-createRoot(renderer).render(<App />);
+main().catch((error) => {
+  console.error("Error:", error.message);
+  process.exit(1);
+});
