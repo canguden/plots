@@ -15,11 +15,13 @@
       "version": "0.1.0",
       "dependencies": {
         "@clickhouse/client": "^1.7.0",
+        "@clickhouse/client-web": "^1.17.0",
         "@hono/node-server": "^1.13.7",
         "@plots/config": "workspace:*",
         "@plots/ui": "workspace:*",
         "better-auth": "^1.4.18",
         "hono": "^4.6.14",
+        "kysely": "^0.28.11",
         "stripe": "^17.5.0",
       },
       "devDependencies": {
@@ -139,6 +141,8 @@
     "@clickhouse/client": ["@clickhouse/client@1.17.0", "", { "dependencies": { "@clickhouse/client-common": "1.17.0" } }, "sha512-Y3DQoamKZ/Iyosoq7Lj7lqpDkQDK4R/5mI52yJs4ZLPIO+d6/CYDqTbFBIb4No3C/AlXUYE4TKhj/kXDpe6rOA=="],
 
     "@clickhouse/client-common": ["@clickhouse/client-common@1.17.0", "", {}, "sha512-MiwwgXViFAQA2YZkN4ymF1ynzG0K49KeSX9/iOcmJetWkxqSekDdpyp1GjwATWa9R215uQ+hGzJtJujeQVZZIw=="],
+
+    "@clickhouse/client-web": ["@clickhouse/client-web@1.17.0", "", { "dependencies": { "@clickhouse/client-common": "1.17.0" } }, "sha512-rady6FKTSKfB4DL3dO1Y9R4XMykc0WxY8Yex4RWYgsNuYWkvP8WQqQjEgHQZqVUYvIA6jth6AMBSKAnZLo4p7A=="],
 
     "@dimforge/rapier2d-simd-compat": ["@dimforge/rapier2d-simd-compat@0.17.3", "", {}, "sha512-bijvwWz6NHsNj5e5i1vtd3dU2pDhthSaTUZSh14DUGGKJfw8eMnlWZsxwHBxB/a3AXVNDjL9abuHw1k9FGR+jg=="],
 

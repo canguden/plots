@@ -112,10 +112,19 @@ export async function handleWebhook(body: string, signature: string) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
+    console.error("❌ STRIPE_WEBHOOK_SECRET not configured in environment");
     throw new Error("Stripe webhook secret not configured");
   }
 
-  const event = client.webhooks.constructEvent(body, signature, webhookSecret);
+  let event: Stripe.Event;
+  
+  try {
+    event = await client.webhooks.constructEventAsync(body, signature, webhookSecret);
+    console.log(`✅ Webhook verified: ${event.type}`);
+  } catch (err: any) {
+    console.error(`❌ Webhook signature verification failed: ${err.message}`);
+    throw new Error(`Webhook signature verification failed: ${err.message}`);
+  }
 
   switch (event.type) {
     case "checkout.session.completed": {
@@ -193,6 +202,10 @@ export async function handleWebhook(body: string, signature: string) {
       }
       break;
     }
+    
+    default:
+      // Log unhandled event types for monitoring
+      console.log(`ℹ️  Unhandled webhook event type: ${event.type}`);
   }
 
   return { received: true };

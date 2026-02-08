@@ -115,10 +115,14 @@ app.get("/auth/me", async (c) => {
 
 // Webhook endpoint (no auth)
 app.post("/webhook/stripe", async (c) => {
+  console.log("🔔 Webhook request received");
+  console.log("📝 STRIPE_WEBHOOK_SECRET configured:", !!process.env.STRIPE_WEBHOOK_SECRET);
+  
   const body = await c.req.text();
   const signature = c.req.header("stripe-signature");
 
   if (!signature) {
+    console.error("❌ No signature header found");
     return c.json({ error: "No signature" }, 400);
   }
 
@@ -126,7 +130,7 @@ app.post("/webhook/stripe", async (c) => {
     const result = await handleWebhook(body, signature);
     return c.json(result);
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("❌ Webhook error:", error);
     return c.json({ error: "Webhook failed" }, 400);
   }
 });
@@ -247,9 +251,12 @@ try {
   console.error("❌ Failed to initialize database:", error);
 }
 
-console.log(`🎯 Server running on http://localhost:${PORT}`);
-
-export default {
+// Start server
+const server = Bun.serve({
   port: PORT,
   fetch: app.fetch,
-};
+});
+
+console.log(`🎯 Server running on http://localhost:${server.port}`);
+
+export default server;

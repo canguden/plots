@@ -1,4 +1,71 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+
+function InstallBox() {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const copyCode = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  return (
+    <div className="mt-16 max-w-2xl mx-auto">
+      <div className="border border-[#333] bg-[#0a0a0a] rounded-lg overflow-hidden shadow-2xl">
+        {/* Terminal Header */}
+        <div className="bg-[#1a1a1a] border-b border-[#333] px-4 py-2 flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+          </div>
+          <span className="text-xs text-[#666] ml-2">Quick Start</span>
+        </div>
+        
+        {/* Terminal Content */}
+        <div className="p-6 font-mono text-sm">
+          <div className="mb-4">
+            <div className="text-[#666] mb-2"># Install the CLI</div>
+            <div className="bg-[#111] rounded px-4 py-3 flex items-center justify-between group border border-[#222] hover:border-[#444] transition-colors">
+              <code className="text-[#0f0]">$ npx opentui plots</code>
+              <button 
+                onClick={() => copyCode('npx opentui plots', 'install')}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
+              >
+                {copied === 'install' ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+          
+          <div>
+            <div className="text-[#666] mb-2"># Or view your analytics</div>
+            <div className="bg-[#111] rounded px-4 py-3 flex items-center justify-between group border border-[#222] hover:border-[#444] transition-colors">
+              <code className="text-[#0f0]">$ plots dashboard</code>
+              <button 
+                onClick={() => copyCode('plots dashboard', 'dashboard')}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
+              >
+                {copied === 'dashboard' ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-[#222]">
+            <Link 
+              href="/docs" 
+              className="text-[#666] hover:text-white text-xs flex items-center gap-1"
+            >
+              <span>→</span> Read the full documentation
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   return (
@@ -27,6 +94,9 @@ export default function LandingPage() {
             Sign In
           </Link>
         </div>
+
+        {/* Installation Box */}
+        <InstallBox />
       </div>
 
       {/* Features Section */}
@@ -134,9 +204,9 @@ export default function LandingPage() {
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Resources</h4>
               <ul className="space-y-2 text-sm text-[#666]">
-                <li><a href="#" className="hover:text-white">Documentation</a></li>
+                <li><Link href="/docs" className="hover:text-white">Documentation</Link></li>
                 <li><a href="#" className="hover:text-white">API Reference</a></li>
-                <li><a href="#" className="hover:text-white">GitHub</a></li>
+                <li><a href="https://github.com" className="hover:text-white">GitHub</a></li>
               </ul>
             </div>
             
