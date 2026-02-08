@@ -1,6 +1,7 @@
 // Auth middleware and token validation
 import { Context, Next } from "hono";
-import { validateAPIToken, validateSession } from "./users";
+import { validateAPIToken } from "./users";
+import { auth } from "./lib/auth";
 
 type Variables = {
   userId: string;
@@ -12,7 +13,7 @@ export interface AuthEnv {
 }
 
 export async function authMiddleware(c: Context<{ Variables: Variables }>, next: Next) {
-  // Try API token first (Bearer token)
+  // Try API token first (Bearer token for CLI)
   const authHeader = c.req.header("Authorization");
   
   if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -29,19 +30,21 @@ export async function authMiddleware(c: Context<{ Variables: Variables }>, next:
     }
   }
 
-  // Try session cookie (web)
-  const sessionCookie = c.req.header("Cookie")
-    ?.split(";")
-    .find((c) => c.trim().startsWith("plots_session="))
-    ?.split("=")[1];
-
-  if (sessionCookie) {
-    const userId = await validateSession(sessionCookie);
-    
-    if (userId) {
-      c.set("userId", userId);
-      await next();
-      return;
+  // Try better-auth session (web)
+  const cookie = c.req.header("Cookie");
+  if (cookie) {
+    try {
+      const session = await auth.api.getSession({
+        headers: { cookie },
+      });
+      
+      if (session?.user) {
+        c.set("userId", session.user.id);
+        await next();
+        return;
+      }
+    } catch (error) {
+      // Session invalid or expired
     }
   }
 

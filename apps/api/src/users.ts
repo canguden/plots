@@ -4,8 +4,9 @@ import { getClickHouseClient } from "./db";
 export interface User {
   id: string;
   email: string;
-  password_hash: string;
   name: string;
+  email_verified?: boolean;
+  image?: string;
   stripe_customer_id?: string;
   subscription_tier?: string;
   subscription_status?: string;
@@ -31,8 +32,9 @@ export interface APIToken {
 }
 
 export interface Session {
-  session_id: string;
+  id: string;
   user_id: string;
+  session_token: string;
   expires_at: string;
   created_at: string;
 }
@@ -42,68 +44,7 @@ function generateId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).substr(2, 16)}`;
 }
 
-// Hash password (simple for now - use bcrypt in production)
-function hashPassword(password: string): string {
-  // In production, use bcrypt or argon2
-  return Buffer.from(password).toString('base64');
-}
-
-function verifyPassword(password: string, hash: string): boolean {
-  return Buffer.from(password).toString('base64') === hash;
-}
-
-export async function createUser(email: string, password: string, name: string): Promise<User> {
-  const client = getClickHouseClient();
-  
-  // Check if user exists
-  const existing = await client.query({
-    query: "SELECT * FROM users WHERE email = {email:String}",
-    query_params: { email },
-  });
-  
-  const rows = await existing.json();
-  if (rows.data.length > 0) {
-    throw new Error("User already exists");
-  }
-
-  const user: User = {
-    id: generateId("user"),
-    email,
-    password_hash: hashPassword(password),
-    name,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  await client.insert({
-    table: "users",
-    values: [user],
-    format: "JSONEachRow",
-  });
-
-  return user;
-}
-
-export async function authenticateUser(email: string, password: string): Promise<User | null> {
-  const client = getClickHouseClient();
-  
-  const result = await client.query({
-    query: "SELECT * FROM users WHERE email = {email:String}",
-    query_params: { email },
-  });
-  
-  const rows = await result.json();
-  if (rows.data.length === 0) {
-    return null;
-  }
-
-  const user = rows.data[0] as User;
-  if (!verifyPassword(password, user.password_hash)) {
-    return null;
-  }
-
-  return user;
-}
+// User functions
 
 export async function getUserById(userId: string): Promise<User | null> {
   const client = getClickHouseClient();
@@ -117,51 +58,7 @@ export async function getUserById(userId: string): Promise<User | null> {
   return rows.data.length > 0 ? (rows.data[0] as User) : null;
 }
 
-export async function createSession(userId: string): Promise<string> {
-  const client = getClickHouseClient();
-  
-  const sessionId = generateId("sess");
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
-
-  await client.insert({
-    table: "sessions",
-    values: [{
-      session_id: sessionId,
-      user_id: userId,
-      expires_at: expiresAt.toISOString(),
-      created_at: new Date().toISOString(),
-    }],
-    format: "JSONEachRow",
-  });
-
-  return sessionId;
-}
-
-export async function validateSession(sessionId: string): Promise<string | null> {
-  const client = getClickHouseClient();
-  
-  const result = await client.query({
-    query: `
-      SELECT user_id FROM sessions 
-      WHERE session_id = {sessionId:String} 
-      AND expires_at > now()
-    `,
-    query_params: { sessionId },
-  });
-  
-  const rows = await result.json();
-  return rows.data.length > 0 ? (rows.data[0] as any).user_id : null;
-}
-
-export async function deleteSession(sessionId: string): Promise<void> {
-  const client = getClickHouseClient();
-  
-  await client.command({
-    query: "DELETE FROM sessions WHERE session_id = {sessionId:String}",
-    query_params: { sessionId },
-  });
-}
+// API Token functions
 
 export async function createAPIToken(userId: string, name: string): Promise<string> {
   const client = getClickHouseClient();

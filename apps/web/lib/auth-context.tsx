@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useSession, signIn as betterSignIn, signUp as betterSignUp, signOut as betterSignOut } from './auth';
 
 interface User {
   id: string;
@@ -19,77 +20,51 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { data: session, isPending } = useSession();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        credentials: 'include',
+    if (session?.user) {
+      setUser({
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.name || null,
       });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
+    } else {
       setUser(null);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [session]);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
+    const result = await betterSignIn.email({
+      email,
+      password,
     });
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || 'Login failed');
+    if (result.error) {
+      throw new Error(result.error.message || 'Login failed');
     }
-
-    const data = await res.json();
-    setUser(data.user);
   };
 
   const signup = async (email: string, password: string, name?: string) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password, name }),
+    const result = await betterSignUp.email({
+      email,
+      password,
+      name: name || '',
     });
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || 'Signup failed');
+    if (result.error) {
+      throw new Error(result.error.message || 'Signup failed');
     }
-
-    const data = await res.json();
-    setUser(data.user);
   };
 
   const logout = async () => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
+    await betterSignOut();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading: isPending, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,6 +2,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { auth } from "./lib/auth";
 import { authMiddleware, extractProjectId } from "./auth";
 import { ingestEvent } from "./ingest";
 import { ensureSchema } from "./db";
@@ -16,16 +17,11 @@ import {
 } from "./queries";
 import { getUsage, createCheckoutSession, handleWebhook } from "./billing";
 import {
-  createUser,
-  authenticateUser,
-  createSession,
-  deleteSession,
   createAPIToken,
   getUserProjects,
   createProject,
   getProjectById,
   getUserById,
-  validateSession,
 } from "./users";
 
 // Define Hono context types
@@ -38,106 +34,83 @@ const app = new Hono<{ Variables: Variables }>();
 
 // Middleware
 app.use("*", logger());
-app.use("*", cors());
+app.use("*", cors({
+  origin: process.env.WEB_URL || "http://localhost:3000",
+  credentials: true,
+}));
 
 // Public endpoints
 app.post("/ingest", ingestEvent);
 
-// Auth endpoints (no middleware)
-app.post("/auth/signup", async (c) => {
-  try {
-    const { email, password, name } = await c.req.json();
-    
-    if (!email || !password || !name) {
-      return c.json({ error: "Missing required fields" }, 400);
-    }
+// Better-auth endpoints - handles /api/auth/*
+app.on(["POST", "GET"], "/api/auth/**", (c) => {
+  return auth.handler(c.req.raw);
+});
 
-    const user = await createUser(email, password, name);
-    const sessionId = await createSession(user.id);
-    
-    // Create default project
-    await createProject(user.id, "My Website", "example.com");
-    
-    // Set cookie
-    c.header("Set-Cookie", `plots_session=${sessionId}; HttpOnly; Secure; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}; Path=/`);
-    
-    return c.json({ 
-      user: { id: user.id, email: user.email, name: user.name },
-      session: sessionId 
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 400);
+// Backward compatibility - redirect old endpoints to better-auth
+app.post("/auth/signup", async (c) => {
+  const body = await c.req.json();
+  const response = await auth.api.signUpEmail({
+    body: {
+      email: body.email,
+      password: body.password,
+      name: body.name,
+    },
+  });
+  
+  if (!response) {
+    return c.json({ error: "Signup failed" }, 400);
   }
+  
+  // Create default project for new user
+  if (response.user) {
+    await createProject(response.user.id, "My Website", "example.com");
+  }
+  
+  return c.json(response);
 });
 
 app.post("/auth/login", async (c) => {
-  try {
-    const { email, password } = await c.req.json();
-    
-    const user = await authenticateUser(email, password);
-    
-    if (!user) {
-      return c.json({ error: "Invalid credentials" }, 401);
-    }
-
-    const sessionId = await createSession(user.id);
-    
-    // Set cookie
-    c.header("Set-Cookie", `plots_session=${sessionId}; HttpOnly; Secure; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}; Path=/`);
-    
-    return c.json({ 
-      user: { id: user.id, email: user.email, name: user.name },
-      session: sessionId 
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 400);
+  const body = await c.req.json();
+  const response = await auth.api.signInEmail({
+    body: {
+      email: body.email,
+      password: body.password,
+    },
+  });
+  
+  if (!response) {
+    return c.json({ error: "Invalid credentials" }, 401);
   }
+  
+  return c.json(response);
 });
 
 app.post("/auth/logout", async (c) => {
-  const sessionCookie = c.req.header("Cookie")
-    ?.split(";")
-    .find((c) => c.trim().startsWith("plots_session="))
-    ?.split("=")[1];
-
-  if (sessionCookie) {
-    await deleteSession(sessionCookie);
+  const cookie = c.req.header("Cookie");
+  if (cookie) {
+    await auth.api.signOut({
+      headers: { cookie },
+    });
   }
-
-  c.header("Set-Cookie", "plots_session=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/");
-  
   return c.json({ success: true });
 });
 
 app.get("/auth/me", async (c) => {
-  const sessionCookie = c.req.header("Cookie")
-    ?.split(";")
-    .find((c) => c.trim().startsWith("plots_session="))
-    ?.split("=")[1];
-
-  if (!sessionCookie) {
+  const cookie = c.req.header("Cookie");
+  if (!cookie) {
     return c.json({ error: "Not authenticated" }, 401);
   }
-
-  const userId = await validateSession(sessionCookie);
   
-  if (!userId) {
+  const session = await auth.api.getSession({
+    headers: { cookie },
+  });
+  
+  if (!session?.user) {
     return c.json({ error: "Invalid session" }, 401);
   }
 
-  const user = await getUserById(userId);
-  
-  if (!user) {
-    return c.json({ error: "User not found" }, 404);
-  }
-
-  return c.json({ 
-    user: { 
-      id: user.id, 
-      email: user.email, 
-      name: user.name 
-    }
-  });
+  return c.json({ user: session.user });
 });
 
 // Webhook endpoint (no auth)
