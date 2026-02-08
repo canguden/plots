@@ -5,6 +5,7 @@ import { useState } from "react";
 
 function InstallBox() {
   const [copied, setCopied] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'npm' | 'bun' | 'curl'>('npm');
 
   const copyCode = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -12,51 +13,61 @@ function InstallBox() {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const installCommands = {
+    npm: 'npm install -g plots',
+    bun: 'bun install -g plots',
+    curl: 'curl -fsSL https://plots.app/install | bash',
+  };
+
   return (
     <div className="mt-16 max-w-2xl mx-auto">
       <div className="border border-[#333] bg-[#0a0a0a] rounded-lg overflow-hidden shadow-2xl">
-        {/* Terminal Header */}
-        <div className="bg-[#1a1a1a] border-b border-[#333] px-4 py-2 flex items-center gap-2">
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
-            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
-            <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
-          </div>
-          <span className="text-xs text-[#666] ml-2">Quick Start</span>
+        {/* Tabs */}
+        <div className="bg-[#1a1a1a] border-b border-[#333] px-4 flex items-center gap-1">
+          {(['npm', 'bun', 'curl'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                activeTab === tab
+                  ? 'text-white border-white'
+                  : 'text-[#666] border-transparent hover:text-white'
+              }`}
+            >
+              {tab.toUpperCase()}
+            </button>
+          ))}
         </div>
         
         {/* Terminal Content */}
-        <div className="p-6 font-mono text-sm">
-          <div className="mb-4">
-            <div className="text-[#666] mb-2"># Install the CLI</div>
-            <div className="bg-[#111] rounded px-4 py-3 flex items-center justify-between group border border-[#222] hover:border-[#444] transition-colors">
-              <code className="text-[#0f0]">$ npx opentui plots</code>
-              <button 
-                onClick={() => copyCode('npx opentui plots', 'install')}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
-              >
-                {copied === 'install' ? '✓ Copied' : 'Copy'}
-              </button>
-            </div>
+        <div className="p-6">
+          <div className="bg-[#111] rounded px-4 py-3 flex items-center justify-between group border border-[#222] hover:border-[#444] transition-colors">
+            <code className="text-sm text-white font-mono">$ {installCommands[activeTab]}</code>
+            <button 
+              onClick={() => copyCode(installCommands[activeTab], 'install')}
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
+            >
+              {copied === 'install' ? '✓ Copied' : 'Copy'}
+            </button>
           </div>
-          
-          <div>
-            <div className="text-[#666] mb-2"># Or view your analytics</div>
+
+          <div className="mt-6 text-sm text-[#999]">
+            <p className="mb-2">Then run plots to view your analytics:</p>
             <div className="bg-[#111] rounded px-4 py-3 flex items-center justify-between group border border-[#222] hover:border-[#444] transition-colors">
-              <code className="text-[#0f0]">$ plots dashboard</code>
+              <code className="text-white font-mono">$ plots</code>
               <button 
-                onClick={() => copyCode('plots dashboard', 'dashboard')}
+                onClick={() => copyCode('plots', 'run')}
                 className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
               >
-                {copied === 'dashboard' ? '✓ Copied' : 'Copy'}
+                {copied === 'run' ? '✓ Copied' : 'Copy'}
               </button>
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-[#222]">
+          <div className="mt-6 pt-4 border-t border-[#222]">
             <Link 
               href="/docs" 
-              className="text-[#666] hover:text-white text-xs flex items-center gap-1"
+              className="text-[#666] hover:text-white text-sm flex items-center gap-1"
             >
               <span>→</span> Read the full documentation
             </Link>

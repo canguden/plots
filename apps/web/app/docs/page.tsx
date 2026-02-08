@@ -5,6 +5,7 @@ import { useState } from "react";
 
 export default function DocsPage() {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [installTab, setInstallTab] = useState<'npm' | 'bun' | 'curl'>('npm');
 
   const copyCode = (code: string, section: string) => {
     navigator.clipboard.writeText(code);
@@ -12,26 +13,14 @@ export default function DocsPage() {
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
+  const installCommands = {
+    npm: 'npm install -g plots',
+    bun: 'bun install -g plots',
+    curl: 'curl -fsSL https://plots.app/install | bash',
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="border-b border-[#222] bg-[#0a0a0a]">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold flex items-center gap-2">
-            <span className="text-white">plots</span>
-            <span className="text-[#666]">/</span>
-            <span className="text-[#666]">docs</span>
-          </Link>
-          <div className="flex gap-4">
-            <Link href="/login" className="text-[#666] hover:text-white text-sm">
-              Login
-            </Link>
-            <Link href="/signup" className="bg-white text-black px-4 py-2 rounded text-sm font-semibold hover:bg-[#eee] transition-colors">
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Sidebar */}
@@ -83,26 +72,38 @@ export default function DocsPage() {
 
             <h2 className="text-2xl font-bold mb-4">Installation</h2>
             <p className="text-[#999] mb-4">
-              Get started with Plots using our CLI tool powered by OpenTUI:
+              Install the Plots CLI to access your analytics from the terminal:
             </p>
 
             <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden">
-              <div className="bg-[#1a1a1a] px-4 py-2 flex items-center justify-between border-b border-[#222]">
-                <span className="text-xs text-[#666]">Terminal</span>
+              <div className="bg-[#1a1a1a] border-b border-[#333] px-4 flex items-center gap-1">
+                {(['npm', 'bun', 'curl'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setInstallTab(tab)}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                      installTab === tab
+                        ? 'text-white border-white'
+                        : 'text-[#666] border-transparent hover:text-white'
+                    }`}
+                  >
+                    {tab.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <div className="p-4 flex items-center justify-between group">
+                <code className="text-sm text-white font-mono">$ {installCommands[installTab]}</code>
                 <button
-                  onClick={() => copyCode("npx opentui plots", "install")}
-                  className="text-xs text-[#666] hover:text-white"
+                  onClick={() => copyCode(installCommands[installTab], "install")}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
                 >
                   {copiedSection === "install" ? "✓ Copied" : "Copy"}
                 </button>
               </div>
-              <pre className="p-4 overflow-x-auto">
-                <code className="text-sm text-[#0f0]">$ npx opentui plots</code>
-              </pre>
             </div>
 
             <p className="text-[#999] mt-4">
-              This will launch an interactive TUI to set up your analytics tracking.
+              Once installed, run <code className="bg-[#1a1a1a] px-2 py-0.5 rounded text-white">plots</code> in your terminal to access your dashboard.
             </p>
           </section>
 
@@ -124,7 +125,7 @@ export default function DocsPage() {
                 </button>
               </div>
               <pre className="p-4 overflow-x-auto">
-                <code className="text-sm text-[#0f0]">{`<script defer
+                <code className="text-sm text-white">{`<script defer
   data-domain="yourdomain.com"
   src="https://plots.app/js/script.js">
 </script>`}</code>
@@ -197,7 +198,7 @@ export default function DocsPage() {
                 </button>
               </div>
               <pre className="p-4 overflow-x-auto">
-                <code className="text-sm text-[#0f0]">{`// Track custom events
+                <code className="text-sm text-white">{`// Track custom events
 window.plausible("signup", {
   props: { plan: "starter" }
 });
@@ -223,7 +224,7 @@ window.plausible("Outbound Link: Click", {
                   <span className="text-xs text-[#666]">View dashboard</span>
                 </div>
                 <pre className="p-4">
-                  <code className="text-sm text-[#0f0]">$ plots dashboard</code>
+                  <code className="text-sm text-white">$ plots dashboard</code>
                 </pre>
               </div>
 
@@ -232,7 +233,7 @@ window.plausible("Outbound Link: Click", {
                   <span className="text-xs text-[#666]">Check API key</span>
                 </div>
                 <pre className="p-4">
-                  <code className="text-sm text-[#0f0]">$ plots auth login</code>
+                  <code className="text-sm text-white">$ plots auth login</code>
                 </pre>
               </div>
 
@@ -241,7 +242,7 @@ window.plausible("Outbound Link: Click", {
                   <span className="text-xs text-[#666]">Export data</span>
                 </div>
                 <pre className="p-4">
-                  <code className="text-sm text-[#0f0]">$ plots export --format csv --output analytics.csv</code>
+                  <code className="text-sm text-white">$ plots export --format csv --output analytics.csv</code>
                 </pre>
               </div>
             </div>
@@ -265,7 +266,7 @@ window.plausible("Outbound Link: Click", {
                 </button>
               </div>
               <pre className="p-4 overflow-x-auto">
-                <code className="text-sm text-[#0f0]">{`curl -H "Authorization: Bearer YOUR_API_KEY" \\
+                <code className="text-sm text-white">{`curl -H "Authorization: Bearer YOUR_API_KEY" \\
   https://plots.app/api/events`}</code>
               </pre>
             </div>
@@ -360,7 +361,7 @@ window.plausible("Outbound Link: Click", {
                 </button>
               </div>
               <pre className="p-4 overflow-x-auto">
-                <code className="text-sm text-[#0f0]">{`# Run with Docker
+                <code className="text-sm text-white">{`# Run with Docker
 docker run -p 3000:3000 plots/analytics
 
 # Or clone and run locally
