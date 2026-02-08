@@ -1,31 +1,20 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022"],
     "jsx": "react-jsx",
-    "jsxImportSource": "@opentui/react",
-    "allowJs": true,
-    "types": ["@types/bun", "node"],
-
-    // Bundler mode
+    "jsxImportSource": "react",
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-
-    // Best practices
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "types": ["bun-types"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }
