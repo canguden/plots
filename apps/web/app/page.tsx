@@ -83,7 +83,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="max-w-4xl mx-auto text-center py-20">
+      <div className="max-w-4xl mx-auto text-center  py-20">
         <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
           Privacy-First Analytics<br />
           <span className="text-[#666]">Built for Developers</span>

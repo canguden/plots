@@ -1,4 +1,4 @@
-// API client for fetching analytics data
+// API client for browser/client components
 import type {
   OverviewResponse,
   PagesResponse,
@@ -8,23 +8,23 @@ import type {
   EventsResponse,
   UsageStats,
 } from "@plots/ui";
-import { API_URL, TOKEN_PREFIX } from "@plots/config";
 
-const API_BASE = process.env.API_URL || API_URL;
-const AUTH_TOKEN = process.env.BEARER_TOKEN || `${TOKEN_PREFIX}dev_token`;
+// Client-side API calls go directly to API server with cookies
+const API_BASE = typeof window !== "undefined" 
+  ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001")
+  : "http://localhost:3001";
 
 async function fetcher<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${AUTH_TOKEN}`,
-    },
+    credentials: "include", // Include cookies for auth
+    cache: "no-store",
   });
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.statusText}`);
   }
 
-  return await response.json() as T;
+  return response.json();
 }
 
 export async function getOverview(range: string = "7d"): Promise<OverviewResponse> {
@@ -32,37 +32,25 @@ export async function getOverview(range: string = "7d"): Promise<OverviewRespons
 }
 
 export async function getPages(range: string = "7d"): Promise<PagesResponse> {
-  return fetcher<PagesResponse>(`/api/pages?range=${range}`);
+  return fetcher<PagesResponse>(`/pages?range=${range}`);
 }
 
 export async function getReferrers(range: string = "7d"): Promise<ReferrersResponse> {
-  return fetcher<ReferrersResponse>(`/api/referrers?range=${range}`);
+  return fetcher<ReferrersResponse>(`/referrers?range=${range}`);
 }
 
 export async function getCountries(range: string = "7d"): Promise<CountriesResponse> {
-  return fetcher<CountriesResponse>(`/api/countries?range=${range}`);
+  return fetcher<CountriesResponse>(`/countries?range=${range}`);
 }
 
 export async function getDevices(range: string = "7d"): Promise<DevicesResponse> {
-  return fetcher<DevicesResponse>(`/api/devices?range=${range}`);
+  return fetcher<DevicesResponse>(`/devices?range=${range}`);
 }
 
 export async function getEvents(range: string = "7d"): Promise<EventsResponse> {
-  return fetcher<EventsResponse>(`/api/events?range=${range}`);
+  return fetcher<EventsResponse>(`/events?range=${range}`);
 }
 
 export async function getUsage(): Promise<UsageStats> {
-  return fetcher<UsageStats>("/api/usage");
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  domain: string;
-  userId: string;
-  createdAt: string;
-}
-
-export async function getProjects(): Promise<{ projects: Project[] }> {
-  return fetcher<{ projects: Project[] }>("/api/projects");
+  return fetcher<UsageStats>("/usage");
 }

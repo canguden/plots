@@ -1,0 +1,285 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import type {
+  OverviewResponse,
+  PagesResponse,
+  ReferrersResponse,
+  CountriesResponse,
+  DevicesResponse,
+} from "@plots/ui";
+import { getOverview, getPages, getReferrers, getCountries, getDevices } from "../lib/api-client";
+import { TimeRangeSelector } from "./TimeRangeSelector";
+import { AnalyticsChart } from "./AnalyticsChart";
+
+interface Project {
+  id: string;
+  name: string;
+  domain: string;
+}
+
+interface Props {
+  initialData: {
+    overview: OverviewResponse;
+    pages: PagesResponse;
+    referrers: ReferrersResponse;
+    countries: CountriesResponse;
+    devices: DevicesResponse;
+  };
+  initialRange: string;
+}
+
+const REFRESH_INTERVAL = 30000; // 30 seconds
+
+export function DashboardClient({ initialData, initialRange }: Props) {
+  const [range, setRange] = useState(initialRange);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [overview, setOverview] = useState(initialData.overview);
+  const [pages, setPages] = useState(initialData.pages);
+  const [referrers, setReferrers] = useState(initialData.referrers);
+  const [countries, setCountries] = useState(initialData.countries);
+  const [devices, setDevices] = useState(initialData.devices);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch projects
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/projects', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setProjects(data);
+          if (data.length > 0 && !selectedProject) {
+            setSelectedProject(data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  // Fetch all data
+  const fetchData = useCallback(async (newRange?: string) => {
+    const targetRange = newRange || range;
+    setIsRefreshing(true);
+    
+    try {
+      const [overviewData, pagesData, referrersData, countriesData, devicesData] = await Promise.all([
+        getOverview(targetRange),
+        getPages(targetRange),
+        getReferrers(targetRange),
+        getCountries(targetRange),
+        getDevices(targetRange),
+      ]);
+      
+      setOverview(overviewData);
+      setPages(pagesData);
+      setReferrers(referrersData);
+      setCountries(countriesData);
+      setDevices(devicesData);
+      setLastUpdate(new Date());
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [range]);
+
+  // Auto-refresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+    }, REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  // Refetch when range changes
+  useEffect(() => {
+    // Get range from URL
+    const params = new URLSearchParams(window.location.search);
+    const urlRange = params.get("range") || "7d";
+    
+    if (urlRange !== range) {
+      setRange(urlRange);
+      fetchData(urlRange);
+    }
+  }, [range, fetchData]);
+
+  // Calculate max value for chart scaling
+  const maxValue = Math.max(...overview.series.map(s => s.value), 1);
+
+  const timeAgo = (date: Date) => {
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Project Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="text-xs text-[#666]">Tracking</div>
+          {projects.length > 0 && (
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="bg-[#111] border border-[#222] text-white text-sm px-3 py-1 rounded focus:outline-none focus:border-white transition-colors"
+            >
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs text-[#666]">
+            {isRefreshing ? (
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-1 h-1 bg-green-500 rounded-full animate-pulse" />
+                Updating...
+              </span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-1 h-1 bg-green-500 rounded-full" />
+                Live • Updated {timeAgo(lastUpdate)}
+              </span>
+            )}
+          </div>
+          <TimeRangeSelector />
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
+          <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Visitors</div>
+          <div className="text-2xl font-bold text-white tabular-nums">{overview.stats.visitors.toLocaleString()}</div>
+        </div>
+        <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
+          <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Pageviews</div>
+          <div className="text-2xl font-bold text-white tabular-nums">{overview.stats.pageviews.toLocaleString()}</div>
+        </div>
+        <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
+          <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Bounce Rate</div>
+          <div className="text-2xl font-bold text-white tabular-nums">{`${(overview.stats.bounceRate * 100).toFixed(1)}%`}</div>
+        </div>
+      </div>
+
+      {/* Analytics Chart */}
+      <div className="border border-[#222] bg-[#111] rounded-lg p-6">
+        <h3 className="text-sm font-semibold text-white mb-4">Visitors Over Time</h3>
+        <AnalyticsChart data={overview.series} height={240} />
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pages */}
+        <div className="border border-[#222] bg-[#111] rounded-lg overflow-hidden">
+          <div className="px-6 py-3 border-b border-[#222]">
+            <h2 className="text-sm font-semibold text-white">Top Pages</h2>
+          </div>
+          <div className="divide-y divide-[#1a1a1a]">
+            {pages.pages.slice(0, 5).map((page, i) => (
+              <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center justify-between">
+                <div className="text-sm text-white truncate flex-1">{page.path}</div>
+                <div className="text-sm text-[#666] tabular-nums ml-4">{page.visitors}</div>
+              </div>
+            ))}
+            {pages.pages.length === 0 && (
+              <div className="px-6 py-8 text-center text-sm text-[#666]">No data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Referrers */}
+        <div className="border border-[#222] bg-[#111] rounded-lg overflow-hidden">
+          <div className="px-6 py-3 border-b border-[#222]">
+            <h2 className="text-sm font-semibold text-white">Top Referrers</h2>
+          </div>
+          <div className="divide-y divide-[#1a1a1a]">
+            {referrers.referrers.slice(0, 5).map((ref, i) => (
+              <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center justify-between">
+                <div className="text-sm text-white truncate flex-1">{ref.domain || "Direct"}</div>
+                <div className="text-sm text-[#666] tabular-nums ml-4">{ref.visitors}</div>
+              </div>
+            ))}
+            {referrers.referrers.length === 0 && (
+              <div className="px-6 py-8 text-center text-sm text-[#666]">No data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Countries */}
+        <div className="border border-[#222] bg-[#111] rounded-lg overflow-hidden">
+          <div className="px-6 py-3 border-b border-[#222]">
+            <h2 className="text-sm font-semibold text-white">Countries</h2>
+          </div>
+          <div className="divide-y divide-[#1a1a1a]">
+            {countries.countries.slice(0, 5).map((country, i) => (
+              <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center justify-between">
+                <div className="text-sm text-white truncate flex-1">{country.country}</div>
+                <div className="text-sm text-[#666] tabular-nums ml-4">{country.percentage.toFixed(0)}%</div>
+              </div>
+            ))}
+            {countries.countries.length === 0 && (
+              <div className="px-6 py-8 text-center text-sm text-[#666]">No data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Devices */}
+        <div className="border border-[#222] bg-[#111] rounded-lg overflow-hidden">
+          <div className="px-6 py-3 border-b border-[#222]">
+            <h2 className="text-sm font-semibold text-white">Devices</h2>
+          </div>
+          <div className="divide-y divide-[#1a1a1a]">
+            {devices.devices.slice(0, 5).map((device, i) => {
+              const deviceLower = device.device.toLowerCase();
+              let icon = '';
+              
+              if (deviceLower.includes('mac') || deviceLower.includes('ios')) {
+                icon = ' ▄▄▄\n█   █\n█▄▄▄█';
+              } else if (deviceLower.includes('windows') || deviceLower.includes('pc')) {
+                icon = '█ █\n█▄█\n█ █';
+              } else if (deviceLower.includes('linux')) {
+                icon = ' ▄█▄\n█▀▀▀\n ▀▀▀';
+              } else if (deviceLower.includes('android')) {
+                icon = ' ▄ ▄\n█▀▀█\n█▄▄█';
+              } else {
+                icon = '▄█▄\n█▀█\n▀▀▀';
+              }
+              
+              return (
+                <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center gap-4">
+                  <pre className="text-[10px] leading-[1.1] text-[#666] whitespace-pre">
+{icon}
+                  </pre>
+                  <div className="flex-1 flex items-center justify-between">
+                    <div className="text-sm text-white truncate flex-1">{device.device}</div>
+                    <div className="text-sm text-[#666] tabular-nums ml-4">{device.percentage.toFixed(0)}%</div>
+                  </div>
+                </div>
+              );
+            })}
+            {devices.devices.length === 0 && (
+              <div className="px-6 py-8 text-center text-sm text-[#666]">No data</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

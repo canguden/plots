@@ -42,6 +42,92 @@ app.use("*", cors({
 // Public endpoints
 app.post("/ingest", ingestEvent);
 
+// Serve tracking script
+app.get("/plots.js", async (c) => {
+  const scriptContent = `// Plots Analytics - Client Script
+// Privacy-first, lightweight analytics
+
+(function() {
+  'use strict';
+  
+  const script = document.currentScript;
+  const projectId = script?.getAttribute('data-project');
+  const apiUrl = script?.getAttribute('data-api') || '${process.env.API_URL || 'http://localhost:3001'}';
+  
+  if (!projectId) {
+    console.warn('[Plots] No project ID provided');
+    return;
+  }
+
+  // Send event
+  function send(event, data = {}) {
+    const payload = {
+      project_id: projectId,
+      event,
+      path: location.pathname,
+      referrer: document.referrer || '',
+      timestamp: new Date().toISOString(),
+      ...data
+    };
+
+    const endpoint = \`\${apiUrl}/ingest\`;
+    
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(endpoint, JSON.stringify(payload));
+    } else {
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(() => {});
+    }
+  }
+
+  // Track pageview
+  function pageview() {
+    send('pageview');
+  }
+
+  // Track custom event
+  function track(name, props) {
+    send(name, { properties: props });
+  }
+
+  // Initial pageview
+  pageview();
+
+  // SPA navigation support
+  let lastPath = location.pathname;
+  
+  ['pushState', 'replaceState'].forEach(method => {
+    const original = history[method];
+    history[method] = function() {
+      original.apply(this, arguments);
+      if (location.pathname !== lastPath) {
+        lastPath = location.pathname;
+        pageview();
+      }
+    };
+  });
+
+  window.addEventListener('popstate', () => {
+    if (location.pathname !== lastPath) {
+      lastPath = location.pathname;
+      pageview();
+    }
+  });
+
+  // Expose global API
+  window.plots = { track };
+})();`;
+
+  return c.body(scriptContent, 200, {
+    'Content-Type': 'application/javascript',
+    'Cache-Control': 'public, max-age=3600',
+  });
+});
+
 // Better-auth endpoints - handles /api/auth/*
 app.on(["POST", "GET"], "/api/auth/**", (c) => {
   return auth.handler(c.req.raw);
@@ -62,10 +148,7 @@ app.post("/auth/signup", async (c) => {
     return c.json({ error: "Signup failed" }, 400);
   }
   
-  // Create default project for new user
-  if (response.user) {
-    await createProject(response.user.id, "My Website", "example.com");
-  }
+  // Don't create default project - user will do this in onboarding
   
   return c.json(response);
 });

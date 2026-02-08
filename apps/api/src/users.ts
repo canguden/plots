@@ -107,8 +107,29 @@ export async function validateAPIToken(token: string): Promise<string | null> {
   return null;
 }
 
+// Project limits by tier
+const PROJECT_LIMITS = {
+  free: 1,
+  pro: 10,
+  business: 50,
+};
+
 export async function createProject(userId: string, name: string, domain: string): Promise<Project> {
   const client = getClickHouseClient();
+  
+  // Check user's subscription tier and project count
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  
+  const userProjects = await getUserProjects(userId);
+  const tier = user.subscription_tier || 'free';
+  const limit = PROJECT_LIMITS[tier as keyof typeof PROJECT_LIMITS] || PROJECT_LIMITS.free;
+  
+  if (userProjects.length >= limit) {
+    throw new Error(`Project limit reached for ${tier} plan. Upgrade to add more projects.`);
+  }
   
   const project: Project = {
     id: generateId("proj"),
