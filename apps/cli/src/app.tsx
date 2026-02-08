@@ -98,12 +98,12 @@ export function App() {
   // Project Selection Screen
   if (appState === "project-select") {
     return (
-      <box flexDirection="column" width="100%" height="100%" backgroundColor="#0d1117" justifyContent="center" alignItems="center">
+      <box flexDirection="column" width="100%" height="100%" backgroundColor="#000000" justifyContent="center" alignItems="center">
         <box marginBottom={3}>
           <ascii-font text="plots" font="tiny" color="#ffffff" />
         </box>
         
-        <box width={60} border borderStyle="rounded" borderColor="#30363d" backgroundColor="#161b22" padding={2}>
+        <box width={60} backgroundColor="#09090b" padding={2}>
           <box marginBottom={2}>
             <text><span fg="#c9d1d9"><strong>Select a Project</strong></span></text>
           </box>
@@ -134,7 +134,7 @@ export function App() {
 
   // Dashboard View
   return (
-    <box flexDirection="column" width="100%" backgroundColor="#0d1117">
+    <box flexDirection="column" width="100%" backgroundColor="#000000">
       {/* Header with ASCII Font Logo */}
       <box padding={1} backgroundColor="#000000">
         <box flexDirection="row" justifyContent="space-between" alignItems="center">
@@ -151,7 +151,7 @@ export function App() {
       
       <scrollbox height={terminalHeight - 6} focused>
       {/* Date Range */}
-      <box padding={1} paddingTop={0} paddingBottom={0} flexDirection="row" gap={2} backgroundColor="#0d1117">
+      <box padding={1} paddingTop={0} paddingBottom={0} flexDirection="row" gap={2} backgroundColor="#000000">
         <text><span fg="#8b949e">Range:</span></text>
         {(["24h", "7d", "30d", "12m"] as DateRange[]).map((range) => (
           <text key={range}>
@@ -166,25 +166,25 @@ export function App() {
 
       {/* Stats Row */}
       <box flexDirection="row" padding={1} paddingTop={0} gap={2} width="100%" height={10}>
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
           <text><span fg="#8b949e">Visitors</span></text>
           <text><span fg="#c9d1d9"><strong>{mockStats.uniqueVisitors.toLocaleString()}</strong></span></text>
           <text><span fg="#56d364">↑ 8.7%</span></text>
         </box>
 
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
           <text><span fg="#8b949e">Pageviews</span></text>
           <text><span fg="#c9d1d9"><strong>{mockStats.totalPageviews.toLocaleString()}</strong></span></text>
           <text><span fg="#56d364">↑ 12.3%</span></text>
         </box>
 
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
           <text><span fg="#8b949e">Bounce Rate</span></text>
           <text><span fg="#f79c6a"><strong>{mockStats.bounceRate}%</strong></span></text>
           <text><span fg="#56d364">↓ 2.1%</span></text>
         </box>
 
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
           <text><span fg="#8b949e">Avg Duration</span></text>
           <text><span fg="#d2a8ff"><strong>4m 12s</strong></span></text>
           <text><span fg="#56d364">↑ 15s</span></text>
@@ -192,7 +192,7 @@ export function App() {
       </box>
 
       {/* Chart */}
-      <box padding={1} paddingLeft={2} paddingRight={2} flexDirection="column" backgroundColor="#161b22" marginLeft={1} marginRight={1} marginBottom={1} border borderStyle="rounded" borderColor="#30363d" height={8}>
+      <box padding={1} paddingLeft={2} paddingRight={2} flexDirection="column" backgroundColor="#09090b" marginLeft={1} marginRight={1} marginBottom={1} height={8}>
         <text><span fg="#c9d1d9"><strong>Traffic Trend</strong></span></text>
         <box flexGrow={1} justifyContent="center">
           <text><span fg="#58a6ff">{sparkline(pageviewsChart)}{sparkline(pageviewsChart)}{sparkline(pageviewsChart)}{sparkline(pageviewsChart)}</span></text>
@@ -216,7 +216,7 @@ export function App() {
       </scrollbox>
       
       {/* Footer */}
-      <box padding={1} flexDirection="row" justifyContent="space-between" backgroundColor="#161b22">
+      <box padding={1} flexDirection="row" justifyContent="space-between" backgroundColor="#09090b">
         <box flexDirection="row" gap={3}>
           <text>
             <span fg="#8b949e">1</span>
@@ -249,7 +249,7 @@ export function App() {
 
       {/* Project Switcher */}
       {showProjectSwitcher && (
-        <box position="absolute" top="50%" left="50%" width={60} padding={1} flexDirection="column" backgroundColor="#161b22">
+        <box position="absolute" top="50%" left="50%" width={60} padding={1} flexDirection="column" backgroundColor="#09090b">
           <box marginBottom={1}>
             <text><span fg="#c9d1d9"><strong>Switch Project</strong></span></text>
           </box>
@@ -276,7 +276,7 @@ function OverviewView() {
       {/* Top Row: Pages and Sources */}
       <box flexDirection="row" gap={1} width="100%">
         {/* Top Pages */}
-        <box width="50%" padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="50%" padding={1} flexDirection="column" backgroundColor="#09090b">
           <text><span fg="#c9d1d9"><strong>Top Pages</strong></span></text>
           <box flexDirection="row" marginTop={1}>
             <box width={20}><text><span fg="#8b949e">Path</span></text></box>
@@ -305,7 +305,7 @@ function OverviewView() {
         </box>
 
         {/* Traffic Sources */}
-        <box width="50%" padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="50%" padding={1} flexDirection="column" backgroundColor="#09090b">
           <text><span fg="#c9d1d9"><strong>Traffic Sources</strong></span></text>
           <box flexDirection="row" marginTop={1}>
             <box width={15}><text><span fg="#8b949e">Source</span></text></box>
@@ -338,7 +338,7 @@ function OverviewView() {
       {/* Bottom Row: Countries and Referrers */}
       <box flexDirection="row" gap={1} width="100%">
         {/* Countries */}
-        <box width="50%" padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="50%" padding={1} flexDirection="column" backgroundColor="#09090b">
           <text><span fg="#c9d1d9"><strong>Top Countries</strong></span></text>
           <box flexDirection="row" marginTop={1}>
             <box width={18}><text><span fg="#8b949e">Country</span></text></box>
@@ -367,7 +367,7 @@ function OverviewView() {
         </box>
 
         {/* Top Referrers */}
-        <box width="50%" padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+        <box width="50%" padding={1} flexDirection="column" backgroundColor="#09090b">
           <text><span fg="#c9d1d9"><strong>Top Referrers</strong></span></text>
           <box flexDirection="row" marginTop={1}>
             <box width={25}><text><span fg="#8b949e">Referrer</span></text></box>
@@ -408,7 +408,7 @@ function PagesView() {
   const avgTime = (n: number) => Math.floor(Math.random() * 180 + 60);
   
   return (
-    <box padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+    <box padding={1} flexDirection="column" backgroundColor="#09090b">
       <text><span fg="#c9d1d9"><strong>All Pages</strong></span></text>
       <box flexDirection="row" marginTop={1}>
         <box width={30}><text><span fg="#8b949e">Path</span></text></box>
@@ -448,7 +448,7 @@ function PagesView() {
 
 function CountriesView() {
   return (
-    <box padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+    <box padding={1} flexDirection="column" backgroundColor="#09090b">
       <text><span fg="#c9d1d9"><strong>All Countries</strong></span></text>
       <box flexDirection="row" marginTop={1}>
         <box width={20}><text><span fg="#8b949e">Country</span></text></box>
@@ -508,7 +508,7 @@ function TechView() {
   return (
     <box flexDirection="row" gap={1} width="100%">
       {/* Browsers */}
-      <box width="33%" padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+      <box width="33%" padding={1} flexDirection="column" backgroundColor="#09090b">
         <text marginTop={1}><span fg="#c9d1d9"><strong>Browsers</strong></span></text>
         <box flexDirection="row" marginTop={1}>
           <box width={15}><text><span fg="#8b949e">Browser</span></text></box>
@@ -531,7 +531,7 @@ function TechView() {
       </box>
 
       {/* Operating Systems */}
-      <box width="33%" padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+      <box width="33%" padding={1} flexDirection="column" backgroundColor="#09090b">
         <text marginTop={1}><span fg="#c9d1d9"><strong>Operating Systems</strong></span></text>
         <box flexDirection="row" marginTop={1}>
           <box width={15}><text><span fg="#8b949e">OS</span></text></box>
@@ -554,7 +554,7 @@ function TechView() {
       </box>
 
       {/* Devices */}
-      <box width="34%" padding={1} flexDirection="column" backgroundColor="#161b22" border borderStyle="rounded" borderColor="#30363d">
+      <box width="34%" padding={1} flexDirection="column" backgroundColor="#09090b">
         <text marginTop={1}><span fg="#c9d1d9"><strong>Devices</strong></span></text>
         <box flexDirection="row" marginTop={1}>
           <box width={15}><text><span fg="#8b949e">Device</span></text></box>
