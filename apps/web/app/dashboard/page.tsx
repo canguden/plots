@@ -1,4 +1,4 @@
-import { getOverview, getPages, getReferrers, getCountries, getDevices } from "../lib/api";
+import { getOverview, getPages, getReferrers, getCountries, getDevices } from "../../lib/api";
 import { DashboardClient } from "../../components/DashboardClient";
 
 interface Props {
