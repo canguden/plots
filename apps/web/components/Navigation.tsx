@@ -26,7 +26,7 @@ export function Navigation() {
           </Link>
           
           {!loading && (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-8">
               {user ? (
                 <>
                   <Link href="/dashboard" className="text-sm text-[#666] hover:text-white transition-colors">
@@ -44,6 +44,9 @@ export function Navigation() {
                 </>
               ) : (
                 <>
+                     <Link href="/docs" className="text-sm text-[#666] hover:text-white transition-colors">
+                    Docs
+                  </Link>
                   <Link href="/pricing" className="text-sm text-[#666] hover:text-white transition-colors">
                     Pricing
                   </Link>

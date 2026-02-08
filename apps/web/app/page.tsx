@@ -5,7 +5,7 @@ import { useState } from "react";
 
 function InstallBox() {
   const [copied, setCopied] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'npm' | 'bun' | 'curl'>('npm');
+  const [activeTab, setActiveTab] = useState<'npm' | 'pnpm' | 'bun' | 'curl'>('npm');
 
   const copyCode = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -15,6 +15,7 @@ function InstallBox() {
 
   const installCommands = {
     npm: 'npm install -g plots',
+    pnpm: 'pnpm install -g plots',
     bun: 'bun install -g plots',
     curl: 'curl -fsSL https://plots.app/install | bash',
   };
@@ -24,7 +25,7 @@ function InstallBox() {
       <div className="border border-[#333] bg-[#0a0a0a] rounded-lg overflow-hidden shadow-2xl">
         {/* Tabs */}
         <div className="bg-[#1a1a1a] border-b border-[#333] px-4 flex items-center gap-1">
-          {(['npm', 'bun', 'curl'] as const).map((tab) => (
+          {(['npm', 'pnpm', 'bun', 'curl'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

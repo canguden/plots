@@ -5,7 +5,7 @@ import { useState } from "react";
 
 export default function DocsPage() {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  const [installTab, setInstallTab] = useState<'npm' | 'bun' | 'curl'>('npm');
+  const [installTab, setInstallTab] = useState<'npm' | 'pnpm' | 'bun' | 'curl'>('npm');
 
   const copyCode = (code: string, section: string) => {
     navigator.clipboard.writeText(code);
@@ -15,6 +15,7 @@ export default function DocsPage() {
 
   const installCommands = {
     npm: 'npm install -g plots',
+    pnpm: 'pnpm install -g plots',
     bun: 'bun install -g plots',
     curl: 'curl -fsSL https://plots.app/install | bash',
   };
@@ -77,7 +78,7 @@ export default function DocsPage() {
 
             <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden">
               <div className="bg-[#1a1a1a] border-b border-[#333] px-4 flex items-center gap-1">
-                {(['npm', 'bun', 'curl'] as const).map((tab) => (
+                {(['npm', 'pnpm', 'bun', 'curl'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setInstallTab(tab)}
