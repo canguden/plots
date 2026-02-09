@@ -145,11 +145,11 @@ vercel --prod
 Add these in Vercel Dashboard (Settings > Environment Variables):
 
 ```bash
-NEXT_PUBLIC_API_URL=https://api.plots.sh
-API_URL=https://api.plots.sh
-BETTER_AUTH_SECRET=[same-as-api]
-BETTER_AUTH_URL=https://plots.sh
-BEARER_TOKEN=[get-from-api]
+NEXT_PUBLIC_API_URL=https://api.plots.sh x
+API_URL=https://api.plots.sh x
+BETTER_AUTH_SECRET=[same-as-api] x
+BETTER_AUTH_URL=https://plots.sh x
+BEARER_TOKEN=[get-from-api] ?
 ```
 
 ### Custom Domain
