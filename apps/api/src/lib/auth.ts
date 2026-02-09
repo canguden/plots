@@ -19,9 +19,10 @@ export const auth = betterAuth({
     requireEmailVerification: false,
   },
   session: {
+    expiresIn: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
     cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60, // 5 minutes
+      enabled: false,
     },
   },
   trustedOrigins: [
