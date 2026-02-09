@@ -1,14 +1,40 @@
 {
-  "name": "plots",
-  "version": "0.1.0",
+  "name": "@imagininn/plots",
+  "version": "0.1.2",
+  "description": "Terminal dashboard for Plots - Privacy-first web analytics",
+  "author": "Imagininn <hello@imagininn.com>",
+  "homepage": "https://plots.sh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/canguden/plots.git",
+    "directory": "apps/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/canguden/plots/issues"
+  },
+  "keywords": [
+    "analytics",
+    "plots",
+    "terminal",
+    "dashboard",
+    "cli",
+    "privacy",
+    "web-analytics",
+    "stats"
+  ],
+  "license": "MIT",
   "module": "src/index.tsx",
   "type": "module",
-  "private": true,
   "bin": {
-    "plots": "./src/index.tsx"
+    "plots": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "bun run --watch src/index.tsx",
+    "build": "bun build src/index.tsx --outdir dist --target bun && chmod +x dist/index.js",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
