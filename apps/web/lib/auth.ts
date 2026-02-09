@@ -2,8 +2,7 @@
 import { createAuthClient } from "better-auth/react";
 
 const getBaseURL = () => {
-  if (typeof window !== "undefined") return "/"; // Browser uses proxy
-  return process.env.NEXT_PUBLIC_APP_URL || "https://plots.sh"; // Server uses absolute URL
+  return process.env.NEXT_PUBLIC_APP_URL || "https://www.plots.sh";
 };
 
 export const authClient = createAuthClient({

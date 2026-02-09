@@ -106,11 +106,15 @@ export async function getOverview(
   const avgDuration = Math.round(Number(firstRow.avgDuration || 0));
   const bounceRate = Math.round(Number(firstRow.bounceRate || 0));
 
+  // Determine grouping granularity based on range
+  const isShortRange = range === "today" || range === "yesterday";
+  const groupFunc = isShortRange ? "toStartOfHour(ts)" : "toDate(ts)";
+
   // Get time series
   const seriesResult = await client.query({
     query: `
       SELECT
-        toDate(ts) as date,
+        ${groupFunc} as date,
         count(DISTINCT session_id) as value
       FROM events
       WHERE project_id = {projectId: String}

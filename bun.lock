@@ -36,34 +36,19 @@
     },
     "apps/cli": {
       "name": "plots",
-      "version": "0.1.3",
+      "version": "0.1.15",
       "bin": {
         "plots": "./dist/index.js",
       },
       "dependencies": {
         "@opentui/core": "^0.1.77",
         "@opentui/react": "^0.1.77",
-        "@plots/config": "workspace:*",
-        "@plots/ui": "workspace:*",
         "open": "^11.0.0",
         "react": "^19.2.4",
       },
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5.7.2",
-      },
-    },
-    "apps/cli-test": {
-      "name": "plots-cli-test",
-      "version": "0.0.1",
-      "dependencies": {
-        "@opentui/core": "^0.1.77",
-        "@opentui/react": "^0.1.77",
-        "react": "^19.0.0",
-      },
-      "devDependencies": {
-        "@types/react": "^19.0.0",
-        "typescript": "^5.0.0",
       },
     },
     "apps/web": {
@@ -73,6 +58,7 @@
         "@plots/config": "workspace:*",
         "@plots/ui": "workspace:*",
         "better-auth": "^1.4.18",
+        "lucide-react": "^0.563.0",
         "next": "16.1.6",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -1132,6 +1118,8 @@
 
     "lru-cache": ["lru-cache@5.1.1", "", { "dependencies": { "yallist": "^3.0.2" } }, "sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w=="],
 
+    "lucide-react": ["lucide-react@0.563.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-8dXPB2GI4dI8jV4MgUDGBeLdGk8ekfqVZ0BdLcrRzocGgG75ltNEmWS+gE7uokKF/0oSUuczNDT+g9hFJ23FkA=="],
+
     "magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
 
     "marked": ["marked@17.0.1", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-boeBdiS0ghpWcSwoNm/jJBwdpFaMnZWRzjA6SkUMYb40SVaN1x7mmfGKp0jvexGcx+7y2La5zRZsYFZI6Qpypg=="],
@@ -1243,8 +1231,6 @@
     "planck": ["planck@1.4.2", "", { "peerDependencies": { "stage-js": "^1.0.0-alpha.12" } }, "sha512-mNbhnV3g8X2rwGxzcesjmN8BDA6qfXgQxXVMkWau9MCRlQY0RLNEkyHlVp6yFy/X6qrzAXyNONCnZ1cGDLrNew=="],
 
     "plots": ["plots@workspace:apps/cli"],
-
-    "plots-cli-test": ["plots-cli-test@workspace:apps/cli-test"],
 
     "pngjs": ["pngjs@7.0.0", "", {}, "sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow=="],
 
