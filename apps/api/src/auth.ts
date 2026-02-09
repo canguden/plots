@@ -15,13 +15,13 @@ export interface AuthEnv {
 export async function authMiddleware(c: Context<{ Variables: Variables }>, next: Next) {
   // Try API token first (Bearer token for CLI)
   const authHeader = c.req.header("Authorization");
-  
+
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
-    
+
     if (token.startsWith("pl_live_") || token.startsWith("pl_test_")) {
       const userId = await validateAPIToken(token);
-      
+
       if (userId) {
         c.set("userId", userId);
         await next();
@@ -37,15 +37,20 @@ export async function authMiddleware(c: Context<{ Variables: Variables }>, next:
       const session = await auth.api.getSession({
         headers: { cookie },
       });
-      
+
       if (session?.user) {
         c.set("userId", session.user.id);
         await next();
         return;
+      } else {
+        console.log("[Auth] No session user found, cookie present but session invalid");
       }
     } catch (error) {
       // Session invalid or expired
+      console.log("[Auth] Session error:", error instanceof Error ? error.message : error);
     }
+  } else {
+    console.log("[Auth] No cookie header present");
   }
 
   return c.json({ error: "Unauthorized" }, 401);
