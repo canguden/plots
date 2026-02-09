@@ -22,7 +22,8 @@ export const auth = betterAuth({
     expiresIn: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
     cookieCache: {
-      enabled: false,
+      enabled: true,
+      maxAge: 5 * 60,
     },
   },
   trustedOrigins: [
@@ -35,10 +36,6 @@ export const auth = betterAuth({
   baseURL: process.env.API_URL || "http://localhost:3001",
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
-    cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60, // 5 minutes
-    },
     cookieOptions: {
       domain: process.env.NODE_ENV === "production" ? ".plots.sh" : undefined,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",

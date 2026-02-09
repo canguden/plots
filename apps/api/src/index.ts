@@ -16,7 +16,6 @@ import { auth } from "./lib/auth";
 import { authMiddleware, extractProjectId } from "./auth";
 import { ingestEvent } from "./ingest";
 import { ensureSchema } from "./db";
-import { initializeUserSchema } from "./schema";
 import {
   getOverview,
   getPages,
@@ -380,8 +379,6 @@ app.get("/api/projects", async (c) => {
 app.post("/api/projects", async (c) => {
   const userId = c.get("userId");
   const { name, domain } = await c.req.json();
-
-  await initializeUserSchema();
   if (!name || !domain) {
     return c.json({ error: "Missing required fields" }, 400);
   }
