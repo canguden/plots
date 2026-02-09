@@ -257,8 +257,13 @@ app.post("/webhook/stripe", async (c) => {
   }
 });
 
-// Protected endpoints
-app.use("/api/*", authMiddleware);
+// Protected endpoints (exclude auth routes)
+app.use("/api/*", async (c, next) => {
+  if (c.req.path.startsWith("/api/auth")) {
+    return await next();
+  }
+  return authMiddleware(c, next);
+});
 
 app.get("/api/overview", async (c) => {
   const userId = c.get("userId");
