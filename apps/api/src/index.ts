@@ -35,6 +35,7 @@ const app = new Hono<{ Variables: Variables }>();
 
 // Middleware
 app.use("*", logger());
+console.log("🚀 Plots API starting up...");
 app.use("*", cors({
   origin: (origin) => {
     const allowed = [
