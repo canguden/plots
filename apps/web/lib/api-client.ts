@@ -52,11 +52,10 @@ export async function getDevices(range: string = "7d", projectId?: string): Prom
   return fetcher<DevicesResponse>(`/api/devices${query}`);
 }
 
+
 export async function getEvents(range: string = "7d", projectId?: string): Promise<EventsResponse> {
   const query = projectId ? `?range=${range}&project=${projectId}` : `?range=${range}`;
   return fetcher<EventsResponse>(`/api/events${query}`);
-}
-  return fetcher<EventsResponse>(`/events?range=${range}`);
 }
 
 export async function getUsage(): Promise<UsageStats> {
