@@ -72,11 +72,11 @@ export function DashboardClient({ initialData, initialRange }: Props) {
 
     try {
       const [overviewData, pagesData, referrersData, countriesData, devicesData] = await Promise.all([
-        getOverview(targetRange),
-        getPages(targetRange),
-        getReferrers(targetRange),
-        getCountries(targetRange),
-        getDevices(targetRange),
+        getOverview(targetRange, selectedProject || undefined),
+        getPages(targetRange, selectedProject || undefined),
+        getReferrers(targetRange, selectedProject || undefined),
+        getCountries(targetRange, selectedProject || undefined),
+        getDevices(targetRange, selectedProject || undefined),
       ]);
 
       setOverview(overviewData);
@@ -90,7 +90,7 @@ export function DashboardClient({ initialData, initialRange }: Props) {
     } finally {
       setIsRefreshing(false);
     }
-  }, [range]);
+  }, [range, selectedProject]);
 
   // Auto-refresh
   useEffect(() => {
