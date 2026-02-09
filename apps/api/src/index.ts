@@ -370,7 +370,6 @@ app.post("/api/projects", async (c) => {
   const userId = c.get("userId");
   const { name, domain } = await c.req.json();
 
-  await initializeUserSchema();
   if (!name || !domain) {
     return c.json({ error: "Missing required fields" }, 400);
   }
@@ -411,7 +410,9 @@ console.log("🚀 Plots API starting...");
 
 // Ensure database schema exists
 try {
-  await ensureSchema();
+  await ensureSchema(); // ClickHouse
+  const { initializeUserSchema } = await import("./schema");
+  await initializeUserSchema(); // Postgres
   console.log("✅ Database schema initialized");
 } catch (error) {
   console.error("❌ Failed to initialize database:", error);

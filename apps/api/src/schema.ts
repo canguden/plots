@@ -1,96 +1,95 @@
-// Database schema for users and projects
-import { getClickHouseClient } from "./db";
+// Database schema for users and projects - Postgres initialization
+import { getPostgresClient } from "./db";
 
 export async function initializeUserSchema() {
-  const client = getClickHouseClient();
+  const { client } = getPostgresClient();
 
-  // Users table (better-auth compatible)
-  await client.command({
-    query: `
-      CREATE TABLE IF NOT EXISTS users (
-        id String,
-        email String,
-        name String,
-        email_verified Bool DEFAULT false,
-        image String DEFAULT '',
-        stripe_customer_id String DEFAULT '',
-        subscription_tier String DEFAULT 'free',
-        subscription_status String DEFAULT 'active',
-        created_at DateTime DEFAULT now(),
-        updated_at DateTime DEFAULT now()
-      )
-      ENGINE = MergeTree()
-      ORDER BY (id)
-    `,
-  });
+  try {
+    // Users table (Better Auth compatible)
+    await client`
+      CREATE TABLE IF NOT EXISTS "user" (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+        image TEXT,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
 
-  // Projects table
-  await client.command({
-    query: `
-      CREATE TABLE IF NOT EXISTS projects (
-        id String,
-        user_id String,
-        name String,
-        domain String,
-        created_at DateTime DEFAULT now(),
-        updated_at DateTime DEFAULT now()
-      )
-      ENGINE = MergeTree()
-      ORDER BY (user_id, id)
-    `,
-  });
+    // Sessions table (Better Auth compatible)
+    await client`
+      CREATE TABLE IF NOT EXISTS session (
+        id TEXT PRIMARY KEY,
+        "expiresAt" TIMESTAMP NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "ipAddress" TEXT,
+        "userAgent" TEXT,
+        "userId" TEXT NOT NULL REFERENCES "user"(id)
+      );
+    `;
 
-  // API tokens table
-  await client.command({
-    query: `
-      CREATE TABLE IF NOT EXISTS api_tokens (
-        token String,
-        user_id String,
-        name String,
-        last_used DateTime,
-        created_at DateTime DEFAULT now()
-      )
-      ENGINE = MergeTree()
-      ORDER BY (user_id, token)
-    `,
-  });
+    // Accounts table (Better Auth compatible)
+    await client`
+      CREATE TABLE IF NOT EXISTS account (
+        id TEXT PRIMARY KEY,
+        "accountId" TEXT NOT NULL,
+        "providerId" TEXT NOT NULL,
+        "userId" TEXT NOT NULL REFERENCES "user"(id),
+        "accessToken" TEXT,
+        "refreshToken" TEXT,
+        "idToken" TEXT,
+        "accessTokenExpiresAt" TIMESTAMP,
+        "refreshTokenExpiresAt" TIMESTAMP,
+        scope TEXT,
+        password TEXT,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
 
-  // Sessions table (better-auth compatible)
-  await client.command({
-    query: `
-      CREATE TABLE IF NOT EXISTS sessions (
-        id String,
-        user_id String,
-        session_token String,
-        expires_at DateTime,
-        created_at DateTime DEFAULT now()
-      )
-      ENGINE = MergeTree()
-      ORDER BY (id, session_token)
-    `,
-  });
+    // Verification table (Better Auth compatible)
+    await client`
+      CREATE TABLE IF NOT EXISTS verification (
+        id TEXT PRIMARY KEY,
+        identifier TEXT NOT NULL,
+        value TEXT NOT NULL,
+        "expiresAt" TIMESTAMP NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
 
-  // Accounts table (better-auth compatible - for password storage and OAuth)
-  await client.command({
-    query: `
-      CREATE TABLE IF NOT EXISTS accounts (
-        id String,
-        user_id String,
-        provider String,
-        provider_account_id String,
-        password_hash String DEFAULT '',
-        access_token String DEFAULT '',
-        refresh_token String DEFAULT '',
-        expires_at Nullable(DateTime),
-        token_type String DEFAULT '',
-        scope String DEFAULT '',
-        id_token String DEFAULT '',
-        created_at DateTime DEFAULT now()
-      )
-      ENGINE = MergeTree()
-      ORDER BY (user_id, provider, provider_account_id)
-    `,
-  });
+    // Projects table
+    await client`
+      CREATE TABLE IF NOT EXISTS project (
+        id TEXT PRIMARY KEY,
+        "userId" TEXT NOT NULL REFERENCES "user"(id),
+        name TEXT NOT NULL,
+        domain TEXT NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
 
-  console.log("✅ User schema initialized");
+    // API tokens table
+    await client`
+      CREATE TABLE IF NOT EXISTS "apiToken" (
+        id TEXT PRIMARY KEY,
+        "userId" TEXT NOT NULL REFERENCES "user"(id),
+        token TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        "lastUsed" TIMESTAMP,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
+
+    console.log("✅ Postgres user schema initialized");
+  } catch (error) {
+    console.error("❌ Failed to initialize Postgres schema:", error);
+    // Don't throw - we don't want to crash the whole API if tables already exist or there's a minor drift
+  }
 }
