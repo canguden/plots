@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "../lib/auth-context";
+import { Navigation } from "../components/Navigation";
 
 function InstallBox() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -30,22 +31,21 @@ function InstallBox() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === tab
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === tab
                   ? 'text-white border-white'
                   : 'text-[#666] border-transparent hover:text-white'
-              }`}
+                }`}
             >
               {tab.toUpperCase()}
             </button>
           ))}
         </div>
-        
+
         {/* Terminal Content */}
         <div className="p-6">
           <div className="bg-[#111] rounded px-4 py-3 flex items-center justify-between group border border-[#222] hover:border-[#444] transition-colors">
             <code className="text-sm text-white font-mono">$ {installCommands[activeTab]}</code>
-            <button 
+            <button
               onClick={() => copyCode(installCommands[activeTab], 'install')}
               className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
             >
@@ -57,7 +57,7 @@ function InstallBox() {
             <p className="mb-2">Then run plots to view your analytics:</p>
             <div className="bg-[#111] rounded px-4 py-3 flex items-center justify-between group border border-[#222] hover:border-[#444] transition-colors">
               <code className="text-white font-mono">$ plots</code>
-              <button 
+              <button
                 onClick={() => copyCode('plots', 'run')}
                 className="opacity-0 group-hover:opacity-100 transition-opacity text-[#666] hover:text-white text-xs px-2 py-1 bg-[#1a1a1a] rounded"
               >
@@ -67,8 +67,8 @@ function InstallBox() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-[#222]">
-            <Link 
-              href="/docs" 
+            <Link
+              href="/docs"
               className="text-[#666] hover:text-white text-sm flex items-center gap-1"
             >
               <span>→</span> Read the full documentation
@@ -85,6 +85,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
+      <Navigation />
       {/* Hero Section */}
       <div className="max-w-4xl mx-auto text-center  py-20">
         <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
@@ -140,7 +141,7 @@ export default function LandingPage() {
               Privacy First
             </h3>
             <p className="text-[#666]">
-              No cookies, no tracking, no personal data collection. 
+              No cookies, no tracking, no personal data collection.
               GDPR and CCPA compliant out of the box.
             </p>
           </div>
@@ -152,7 +153,7 @@ export default function LandingPage() {
               Lightning Fast
             </h3>
             <p className="text-[#666]">
-              &lt;1KB tracking script. Built with Bun and ClickHouse 
+              &lt;1KB tracking script. Built with Bun and ClickHouse
               for real-time analytics at scale.
             </p>
           </div>
@@ -164,7 +165,7 @@ export default function LandingPage() {
               Terminal First
             </h3>
             <p className="text-[#666]">
-              Beautiful TUI dashboard. View analytics without leaving 
+              Beautiful TUI dashboard. View analytics without leaving
               your terminal with <code className="bg-black px-2 py-1 rounded">plots</code> CLI.
             </p>
           </div>
@@ -212,14 +213,14 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <pre className="text-xs leading-none text-white mb-4">
-{`█▀█ █   █▀█ ▀█▀ █▀
+                {`█▀█ █   █▀█ ▀█▀ █▀
 █▀▀ █▄▄ █▄█  █  ▄█`}
               </pre>
               <p className="text-sm text-[#666]">
                 Privacy-first analytics
               </p>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Product</h4>
               <ul className="space-y-2 text-sm text-[#666]">
@@ -228,7 +229,7 @@ export default function LandingPage() {
                 <li><Link href="/signup" className="hover:text-white">Sign Up</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Resources</h4>
               <ul className="space-y-2 text-sm text-[#666]">
@@ -237,7 +238,7 @@ export default function LandingPage() {
                 <li><a href="https://github.com" className="hover:text-white">GitHub</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-[#666]">
@@ -246,7 +247,7 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-[#222] mt-8 pt-8 text-center text-sm text-[#666]">
             © {new Date().getFullYear()} Plots Analytics. Built with privacy in mind.
           </div>
