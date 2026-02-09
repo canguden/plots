@@ -63,11 +63,11 @@ export default function DashboardPage() {
       try {
         const range = "7d";
         const [overview, pages, referrers, countries, devices] = await Promise.all([
-          getOverview(range, selectedProject),
-          getPages(range, selectedProject),
-          getReferrers(range, selectedProject),
-          getCountries(range, selectedProject),
-          getDevices(range, selectedProject),
+          getOverview(range, selectedProject || undefined),
+          getPages(range, selectedProject || undefined),
+          getReferrers(range, selectedProject || undefined),
+          getCountries(range, selectedProject || undefined),
+          getDevices(range, selectedProject || undefined),
         ]);
         
         setData({ overview, pages, referrers, countries, devices });
