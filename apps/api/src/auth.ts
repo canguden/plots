@@ -51,7 +51,20 @@ export async function authMiddleware(c: Context<{ Variables: Variables }>, next:
   return c.json({ error: "Unauthorized" }, 401);
 }
 
+export async function verifyProjectOwnership(userId: string, projectId: string): Promise<boolean> {
+  const { getProjectById } = await import("./users");
+  try {
+    const project = await getProjectById(projectId, userId);
+    return project !== null;
+  } catch {
+    return false;
+  }
+}
+
 export function extractProjectId(c: Context<{ Variables: Variables }>): string {
-  // Get from query parameter
-  return c.req.query("project") || c.get("projectId") || "proj_demo";
+  const projectId = c.req.query("project");
+  if (!projectId) {
+    throw new Error("Project ID required");
+  }
+  return projectId;
 }

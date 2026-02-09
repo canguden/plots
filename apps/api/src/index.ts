@@ -222,42 +222,86 @@ app.post("/webhook/stripe", async (c) => {
 app.use("/api/*", authMiddleware);
 
 app.get("/api/overview", async (c) => {
+  const userId = c.get("userId");
   const projectId = extractProjectId(c);
+  
+  // Verify user owns this project
+  const { verifyProjectOwnership } = await import("./auth");
+  const hasAccess = await verifyProjectOwnership(userId, projectId);
+  if (!hasAccess) {
+    return c.json({ error: "Access denied" }, 403);
+  }
+  
   const range = c.req.query("range") || "7d";
   const data = await getOverview(projectId, range);
   return c.json(data);
 });
 
 app.get("/api/pages", async (c) => {
+  const userId = c.get("userId");
   const projectId = extractProjectId(c);
+  
+  const { verifyProjectOwnership } = await import("./auth");
+  if (!await verifyProjectOwnership(userId, projectId)) {
+    return c.json({ error: "Access denied" }, 403);
+  }
+  
   const range = c.req.query("range") || "7d";
   const data = await getPages(projectId, range);
   return c.json(data);
 });
 
 app.get("/api/referrers", async (c) => {
+  const userId = c.get("userId");
   const projectId = extractProjectId(c);
+  
+  const { verifyProjectOwnership } = await import("./auth");
+  if (!await verifyProjectOwnership(userId, projectId)) {
+    return c.json({ error: "Access denied" }, 403);
+  }
+  
   const range = c.req.query("range") || "7d";
   const data = await getReferrers(projectId, range);
   return c.json(data);
 });
 
 app.get("/api/countries", async (c) => {
+  const userId = c.get("userId");
   const projectId = extractProjectId(c);
+  
+  const { verifyProjectOwnership } = await import("./auth");
+  if (!await verifyProjectOwnership(userId, projectId)) {
+    return c.json({ error: "Access denied" }, 403);
+  }
+  
   const range = c.req.query("range") || "7d";
   const data = await getCountries(projectId, range);
   return c.json(data);
 });
 
 app.get("/api/devices", async (c) => {
+  const userId = c.get("userId");
   const projectId = extractProjectId(c);
+  
+  const { verifyProjectOwnership } = await import("./auth");
+  if (!await verifyProjectOwnership(userId, projectId)) {
+    return c.json({ error: "Access denied" }, 403);
+  }
+  
   const range = c.req.query("range") || "7d";
   const data = await getDevices(projectId, range);
   return c.json(data);
 });
 
 app.get("/api/events", async (c) => {
+  const userId = c.get("userId");
   const projectId = extractProjectId(c);
+  
+  const { verifyProjectOwnership } = await import("./auth");
+  if (!await verifyProjectOwnership(userId, projectId)) {
+    return c.json({ error: "Access denied" }, 403);
+  }
+  
   const range = c.req.query("range") || "7d";
   const data = await getEvents(projectId, range);
   return c.json(data);
