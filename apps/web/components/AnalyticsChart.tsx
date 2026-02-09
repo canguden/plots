@@ -22,19 +22,20 @@ export function AnalyticsChart({ data, height = 200 }: Props) {
   }
 
   // Detect granularity from data count
-  const isHourly = data.length <= 25; // today/yesterday = 24 hours
+  // Check monthly FIRST — 12 months would also match the <= 25 hourly check
   const isMonthly = data.length >= 11 && data.length <= 13; // year = ~12 months
+  const isHourly = !isMonthly && data.length <= 25; // today/yesterday = 24 hours
 
   const chartData = data.map(point => {
     const date = new Date(point.date);
     let label: string;
 
-    if (isHourly) {
-      // HH:MM format for today/yesterday
-      label = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    } else if (isMonthly) {
+    if (isMonthly) {
       // Mon YYYY for year view
       label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    } else if (isHourly) {
+      // HH:MM format for today/yesterday
+      label = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     } else {
       // Mon DD for 7d/30d
       label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
