@@ -417,10 +417,10 @@ function OverviewView({ pages, countries, referrers }: { pages: PageData[], coun
                       <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                     </box>
                     <box width={10}>
-                      <text><span fg="#58a6ff">{page.views.toLocaleString()}</span></text>
+                      <text><span fg="#58a6ff">{(page.views || 0).toLocaleString()}</span></text>
                     </box>
                     <box width={10}>
-                      <text><span fg="#79c0ff">{page.unique.toLocaleString()}</span></text>
+                      <text><span fg="#79c0ff">{(page.unique || 0).toLocaleString()}</span></text>
                     </box>
                   </box>
                 );
@@ -450,7 +450,7 @@ function OverviewView({ pages, countries, referrers }: { pages: PageData[], coun
                       <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                     </box>
                     <box width={10}>
-                      <text><span fg="#58a6ff">{ref.visitors.toLocaleString()}</span></text>
+                      <text><span fg="#58a6ff">{(ref.visitors || 0).toLocaleString()}</span></text>
                     </box>
                   </box>
                 );
@@ -482,7 +482,7 @@ function OverviewView({ pages, countries, referrers }: { pages: PageData[], coun
                       <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                     </box>
                     <box width={10}>
-                      <text><span fg="#58a6ff">{country.visitors.toLocaleString()}</span></text>
+                      <text><span fg="#58a6ff">{(country.visitors || 0).toLocaleString()}</span></text>
                     </box>
                     <box width={8}>
                       <text><span fg="#f79c6a">{country.percentage}%</span></text>
@@ -520,10 +520,10 @@ function PagesView({ pages }: { pages: PageData[] }) {
                   <text><span fg={i < 3 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                 </box>
                 <box width={10}>
-                  <text><span fg="#58a6ff">{page.views.toLocaleString()}</span></text>
+                  <text><span fg="#58a6ff">{(page.views || 0).toLocaleString()}</span></text>
                 </box>
                 <box width={10}>
-                  <text><span fg="#79c0ff">{page.unique.toLocaleString()}</span></text>
+                  <text><span fg="#79c0ff">{(page.unique || 0).toLocaleString()}</span></text>
                 </box>
               </box>
             );
@@ -556,7 +556,7 @@ function CountriesView({ countries }: { countries: CountryData[] }) {
                   <text><span fg={i < 3 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                 </box>
                 <box width={12}>
-                  <text><span fg="#58a6ff">{country.visitors.toLocaleString()}</span></text>
+                  <text><span fg="#58a6ff">{(country.visitors || 0).toLocaleString()}</span></text>
                 </box>
                 <box width={10}>
                   <text><span fg="#f79c6a">{country.percentage}%</span></text>
@@ -590,7 +590,7 @@ function TechView({ devices }: { devices: DeviceData[] }) {
                 <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{device.device}</span></text>
               </box>
               <box width={10}>
-                <text><span fg="#58a6ff">{device.visitors.toLocaleString()}</span></text>
+                <text><span fg="#58a6ff">{(device.visitors || 0).toLocaleString()}</span></text>
               </box>
               <box flexGrow={1}>
                 <text><span fg="#f79c6a">{device.percentage}%</span></text>
