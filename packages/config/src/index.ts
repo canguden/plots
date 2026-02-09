@@ -1,6 +1,6 @@
 // Shared configuration and constants
 
-export const API_URL = process.env.API_URL || "https://plots.sh/api";
+export const API_URL = process.env.API_URL || "https://api.plots.sh";
 
 export const TIME_RANGES = {
   today: { label: "Today", days: 0 },
