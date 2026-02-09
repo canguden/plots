@@ -257,13 +257,8 @@ app.post("/webhook/stripe", async (c) => {
   }
 });
 
-// Protected endpoints (exclude auth routes)
-app.use("/api/*", async (c, next) => {
-  if (c.req.path.startsWith("/api/auth")) {
-    return await next();
-  }
-  return authMiddleware(c, next);
-});
+// Protected endpoints
+app.use("/api/*", authMiddleware);
 
 app.get("/api/overview", async (c) => {
   const userId = c.get("userId");
@@ -375,6 +370,7 @@ app.post("/api/projects", async (c) => {
   const userId = c.get("userId");
   const { name, domain } = await c.req.json();
 
+  await initializeUserSchema();
   if (!name || !domain) {
     return c.json({ error: "Missing required fields" }, 400);
   }
@@ -415,9 +411,7 @@ console.log("🚀 Plots API starting...");
 
 // Ensure database schema exists
 try {
-  await ensureSchema(); // ClickHouse
-  const { initializeUserSchema } = await import("./schema");
-  await initializeUserSchema(); // Postgres
+  await ensureSchema();
   console.log("✅ Database schema initialized");
 } catch (error) {
   console.error("❌ Failed to initialize database:", error);

@@ -9,9 +9,6 @@ import * as schema from "../db-schema";
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client, { schema });
 
-const baseURL = process.env.API_URL || (process.env.NODE_ENV === "production" ? "https://api.plots.sh" : "http://localhost:3001");
-console.log(`[BetterAuth] Initializing with baseURL: ${baseURL}`);
-
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -22,20 +19,25 @@ export const auth = betterAuth({
     requireEmailVerification: false,
   },
   session: {
-    expiresIn: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // Update session every 24 hours
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
   },
   trustedOrigins: [
     "http://localhost:3000",
     "https://plots.sh",
     "https://www.plots.sh",
-    "https://api.plots.sh",
     ...(process.env.WEB_URL ? [process.env.WEB_URL] : []),
   ],
   secret: process.env.AUTH_SECRET || "this-is-a-secret-value-with-at-least-32-characters-for-development",
-  baseURL,
+  baseURL: process.env.API_URL || "http://localhost:3001",
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
+    cookieOptions: {
+      domain: process.env.NODE_ENV === "production" ? ".plots.sh" : undefined,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    },
   },
 });
 
