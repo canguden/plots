@@ -10,10 +10,9 @@ export default function OnboardingPage() {
   const [websiteName, setWebsiteName] = useState('');
   const [domain, setDomain] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const router = useRouter();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -25,7 +24,7 @@ export default function OnboardingPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.plots.sh';
@@ -51,7 +50,7 @@ export default function OnboardingPage() {
     } catch (err: any) {
       setError(err.message || 'Failed to create project');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 

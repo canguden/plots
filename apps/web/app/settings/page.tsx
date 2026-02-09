@@ -31,7 +31,7 @@ export default function SettingsPage() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [showAddProject, setShowAddProject] = useState(false);
@@ -133,7 +133,7 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Failed to load tokens:', error);
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   };
 
