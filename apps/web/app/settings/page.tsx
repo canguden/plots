@@ -188,13 +188,24 @@ export default function SettingsPage() {
     setNewToken(null);
   };
 
-  return (
-    <ProtectedRoute>
-      <div className="max-w-3xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-white mb-2">Settings</h1>
-          <p className="text-sm text-[#666]">Manage your account and projects</p>
+  // Show loading while checking auth
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-[#666]">Loading...</p>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-2xl font-semibold text-white mb-2">Settings</h1>
+        <p className="text-sm text-[#666]">Manage your account and projects</p>
+      </div>
 
       {/* Account Section */}
       <div className="border border-[#222] bg-[#111] rounded-lg">
