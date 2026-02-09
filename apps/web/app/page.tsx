@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "../lib/auth-context";
 
 function InstallBox() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -80,6 +81,8 @@ function InstallBox() {
 }
 
 export default function LandingPage() {
+  const { user, loading } = useAuth();
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -92,20 +95,33 @@ export default function LandingPage() {
           Simple, open-source, and privacy-focused web analytics.
           Track what matters without invading your users' privacy.
         </p>
-        <div className="flex gap-4 justify-center">
-          <Link
-            href="/signup"
-            className="bg-white text-black px-8 py-3 rounded-lg font-semibold hover:bg-[#eee] transition-colors"
-          >
-            Get Started Free
-          </Link>
-          <Link
-            href="/login"
-            className="border border-[#222] text-white px-8 py-3 rounded-lg font-semibold hover:border-[#444] transition-colors"
-          >
-            Sign In
-          </Link>
-        </div>
+        {!loading && (
+          <div className="flex gap-4 justify-center">
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="bg-white text-black px-8 py-3 rounded-lg font-semibold hover:bg-[#eee] transition-colors"
+              >
+                Go to Dashboard →
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  className="bg-white text-black px-8 py-3 rounded-lg font-semibold hover:bg-[#eee] transition-colors"
+                >
+                  Get Started Free
+                </Link>
+                <Link
+                  href="/login"
+                  className="border border-[#222] text-white px-8 py-3 rounded-lg font-semibold hover:border-[#444] transition-colors"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Installation Box */}
         <InstallBox />

@@ -47,7 +47,8 @@ export function DashboardClient({ initialData, initialRange }: Props) {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/projects', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.plots.sh';
+        const response = await fetch(`${apiUrl}/api/projects`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -124,6 +125,32 @@ export function DashboardClient({ initialData, initialRange }: Props) {
     return `${hours}h ago`;
   };
 
+  // Empty state when no projects
+  if (projects.length === 0 && !isRefreshing) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="max-w-md text-center">
+          <div className="text-6xl mb-4">📊</div>
+          <h2 className="text-2xl font-semibold text-white mb-2">
+            Welcome to Plots!
+          </h2>
+          <p className="text-[#999] mb-6">
+            Start tracking your website analytics by adding your first site.
+          </p>
+          <a
+            href="/settings"
+            className="inline-block bg-white text-black px-6 py-2 rounded font-medium hover:bg-[#eee] transition-colors"
+          >
+            Add Your First Website
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
+  const hasNoData = overview.stats.visitors === 0 && overview.stats.pageviews === 0;
+
   return (
     <div className="space-y-6">
       {/* Project Header */}
@@ -161,6 +188,35 @@ export function DashboardClient({ initialData, initialRange }: Props) {
           <TimeRangeSelector />
         </div>
       </div>
+
+      {/* Waiting for data banner */}
+      {hasNoData && (
+        <div className="border border-amber-500/20 bg-amber-500/5 rounded-lg p-6">
+          <div className="flex items-start gap-4">
+            <div className="text-2xl">⏳</div>
+            <div className="flex-1">
+              <h3 className="text-white font-medium mb-1">
+                Waiting for your first pageview...
+              </h3>
+              <p className="text-sm text-[#999] mb-3">
+                Make sure you've installed the tracking script on your website. Data will appear here within seconds of your first visitor.
+              </p>
+              <details className="text-sm">
+                <summary className="text-[#666] hover:text-white cursor-pointer">Show tracking script</summary>
+                <div className="mt-3 bg-black border border-[#222] rounded p-3">
+                  <pre className="text-xs text-white overflow-x-auto">
+{`<script
+  defer
+  src="https://plots.sh/plots.js"
+  data-project="${selectedProject}"
+></script>`}
+                  </pre>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-4">

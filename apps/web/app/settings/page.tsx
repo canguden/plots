@@ -11,6 +11,13 @@ interface Token {
   last_used: string | null;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  domain: string;
+  created_at: string;
+}
+
 interface Usage {
   current: number;
   limit: number;
@@ -20,15 +27,76 @@ interface Usage {
 export default function SettingsPage() {
   const { user } = useAuth();
   const [tokens, setTokens] = useState<Token[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
+  const [showAddProject, setShowAddProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDomain, setNewProjectDomain] = useState('');
+  const [addingProject, setAddingProject] = useState(false);
+  const [copiedScript, setCopiedScript] = useState<string | null>(null);
 
   useEffect(() => {
     loadTokens();
     loadUsage();
+    loadProjects();
   }, []);
+
+  const loadProjects = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.plots.sh';
+      const res = await fetch(`${apiUrl}/api/projects`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    }
+  };
+
+  const addProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddingProject(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.plots.sh';
+      const res = await fetch(`${apiUrl}/api/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: newProjectName,
+          domain: newProjectDomain,
+        }),
+      });
+
+      if (res.ok) {
+        await loadProjects();
+        setShowAddProject(false);
+        setNewProjectName('');
+        setNewProjectDomain('');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to add project');
+      }
+    } catch (error) {
+      console.error('Failed to add project:', error);
+      alert('Failed to add project');
+    } finally {
+      setAddingProject(false);
+    }
+  };
+
+  const copyScript = (projectId: string) => {
+    const script = `<script defer src="https://plots.sh/plots.js" data-project="${projectId}"></script>`;
+    navigator.clipboard.writeText(script);
+    setCopiedScript(projectId);
+    setTimeout(() => setCopiedScript(null), 2000);
+  };
 
   const loadUsage = async () => {
     try {
@@ -149,6 +217,110 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-[#666] mt-1">Email cannot be changed</p>
           </div>
+        </div>
+      </div>
+
+      {/* Projects Section */}
+      <div className="border border-[#222] bg-[#111] rounded-lg">
+        <div className="px-6 py-4 border-b border-[#222] flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">Websites</h2>
+          <button
+            onClick={() => setShowAddProject(!showAddProject)}
+            className="text-xs bg-white text-black px-3 py-1.5 rounded font-medium hover:bg-[#eee] transition-colors"
+          >
+            {showAddProject ? 'Cancel' : '+ Add Website'}
+          </button>
+        </div>
+        <div className="p-6">
+          {showAddProject && (
+            <form onSubmit={addProject} className="mb-6 p-4 bg-[#0a0a0a] border border-[#333] rounded-lg">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs text-[#666] uppercase tracking-wider mb-2">
+                    Website Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    className="w-full bg-black border border-[#222] rounded px-4 py-2 text-white text-sm focus:outline-none focus:border-white transition-colors"
+                    placeholder="My Awesome Site"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[#666] uppercase tracking-wider mb-2">
+                    Domain
+                  </label>
+                  <input
+                    type="text"
+                    value={newProjectDomain}
+                    onChange={(e) => setNewProjectDomain(e.target.value)}
+                    className="w-full bg-black border border-[#222] rounded px-4 py-2 text-white text-sm focus:outline-none focus:border-white transition-colors"
+                    placeholder="example.com"
+                    required
+                  />
+                  <p className="text-xs text-[#666] mt-1">
+                    Your website's domain (without https://)
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={addingProject}
+                  className="w-full bg-white text-black py-2 rounded font-medium hover:bg-[#eee] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addingProject ? 'Adding...' : 'Add Website'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {projects.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-2">🌐</div>
+              <p className="text-sm text-[#666]">No websites yet. Add your first one!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {projects.map((project) => (
+                <div key={project.id} className="bg-[#0a0a0a] border border-[#222] rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-medium text-white">{project.name}</div>
+                      <div className="text-xs text-[#666] mt-0.5">{project.domain}</div>
+                    </div>
+                    <div className="text-xs text-[#666]">
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  <details className="text-sm">
+                    <summary className="text-[#666] hover:text-white cursor-pointer mb-2">
+                      Show tracking script
+                    </summary>
+                    <div className="bg-black border border-[#222] rounded p-3 relative group mt-2">
+                      <pre className="text-xs text-white overflow-x-auto pr-16">
+{`<script
+  defer
+  src="https://plots.sh/plots.js"
+  data-project="${project.id}"
+></script>`}
+                      </pre>
+                      <button
+                        onClick={() => copyScript(project.id)}
+                        className="absolute top-2 right-2 text-xs bg-[#1a1a1a] hover:bg-[#222] text-white px-3 py-1.5 rounded transition-colors"
+                      >
+                        {copiedScript === project.id ? '✓ Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-[#666] mt-2">
+                      Add this before the closing &lt;/head&gt; tag
+                    </p>
+                  </details>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
