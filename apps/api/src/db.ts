@@ -52,11 +52,12 @@ export async function ensureSchema() {
         device LowCardinality(String),
         browser LowCardinality(String),
         event LowCardinality(String),
-        session_id String
+        session_id String,
+        visitor_id String
       )
       ENGINE = MergeTree
       PARTITION BY toYYYYMM(ts)
-      ORDER BY (project_id, ts, session_id)
+      ORDER BY (project_id, ts, visitor_id, session_id)
     `,
   });
 }
