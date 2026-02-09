@@ -13,7 +13,7 @@ COPY packages ./packages
 COPY apps/api ./apps/api
 
 # Install dependencies (all workspace deps)
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Build workspace if needed
 RUN bun run build --filter=api || true
