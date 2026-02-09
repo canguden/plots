@@ -41,6 +41,7 @@ export function getPostgresClient() {
 export async function ensureSchema() {
   const client = getClickHouseClient();
 
+  // Ensure ClickHouse schema
   await client.exec({
     query: `
       CREATE TABLE IF NOT EXISTS events (
@@ -60,4 +61,21 @@ export async function ensureSchema() {
       ORDER BY (project_id, ts, visitor_id, session_id)
     `,
   });
+
+  // Migrations for existing tables
+  try {
+    await client.exec({ query: "ALTER TABLE events ADD COLUMN IF NOT EXISTS session_id String" });
+    await client.exec({ query: "ALTER TABLE events ADD COLUMN IF NOT EXISTS visitor_id String" });
+  } catch (e) {
+    console.error("ClickHouse migration error (can usually ignore if columns exist):", e);
+  }
+
+  // Ensure Postgres schema for Better Auth
+  try {
+    const { initializeUserSchema } = await import("./schema");
+    await initializeUserSchema();
+    console.log("✅ Postgres schema initialized");
+  } catch (error) {
+    console.error("❌ Failed to initialize Postgres schema:", error);
+  }
 }
