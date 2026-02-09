@@ -32,8 +32,6 @@ export default function SettingsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [loadingData, setLoadingData] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [newToken, setNewToken] = useState<string | null>(null);
   const [showAddProject, setShowAddProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDomain, setNewProjectDomain] = useState('');
@@ -137,30 +135,7 @@ export default function SettingsPage() {
     }
   };
 
-  const generateToken = async () => {
-    setGenerating(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tokens`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: 'CLI Token' }),
-      });
 
-      if (res.ok) {
-        const data = await res.json();
-        setNewToken(data.token);
-        await loadTokens();
-      } else {
-        alert('Failed to generate token');
-      }
-    } catch (error) {
-      console.error('Failed to generate token:', error);
-      alert('Failed to generate token');
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   const revokeToken = async (tokenId: string) => {
     if (!confirm('Are you sure you want to revoke this token?')) return;
@@ -352,35 +327,10 @@ export default function SettingsPage() {
         </div>
         <div className="p-6">
           <p className="text-sm text-[#666] mb-4">
-            Use API tokens to authenticate CLI and API requests. Run <code className="bg-black px-2 py-1 rounded">plots login</code> in your terminal.
+            Manage your active CLI sessions. To log in from your terminal, run <code className="bg-black px-2 py-1 rounded">plots login</code>.
           </p>
 
-          {newToken && (
-            <div className="bg-[#0a0a0a] border border-[#333] rounded-lg p-4 mb-4">
-              <div className="text-xs text-[#666] uppercase tracking-wider mb-2">
-                New Token (copy now, won't be shown again)
-              </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-sm text-white font-mono bg-black px-3 py-2 rounded overflow-x-auto">
-                  {newToken}
-                </code>
-                <button
-                  onClick={() => copyToClipboard(newToken)}
-                  className="bg-white text-black px-4 py-2 rounded text-sm font-medium hover:bg-[#eee] transition-colors whitespace-nowrap"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          )}
 
-          <button
-            onClick={generateToken}
-            disabled={generating}
-            className="bg-white text-black px-4 py-2 rounded text-sm font-medium hover:bg-[#eee] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {generating ? 'Generating...' : 'Generate New Token'}
-          </button>
 
           <div className="mt-6 space-y-2">
             <div className="text-xs text-[#666] uppercase tracking-wider mb-2">

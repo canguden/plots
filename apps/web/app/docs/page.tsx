@@ -37,7 +37,7 @@ export default function DocsPage() {
                 <li><a href="#authentication" className="text-[#666] hover:text-white">Authentication</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-xs font-semibold text-[#666] uppercase tracking-wider mb-3">
                 Integration
@@ -48,7 +48,7 @@ export default function DocsPage() {
                 <li><a href="#cli" className="text-[#666] hover:text-white">CLI Usage</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-xs font-semibold text-[#666] uppercase tracking-wider mb-3">
                 Features
@@ -82,11 +82,10 @@ export default function DocsPage() {
                   <button
                     key={tab}
                     onClick={() => setInstallTab(tab)}
-                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                      installTab === tab
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${installTab === tab
                         ? 'text-white border-white'
                         : 'text-[#666] border-transparent hover:text-white'
-                    }`}
+                      }`}
                   >
                     {tab.toUpperCase()}
                   </button>
@@ -147,36 +146,34 @@ export default function DocsPage() {
             </div>
           </section>
 
-          {/* Authentication */}
+          {/* Authentication & Integration */}
           <section id="authentication">
-            <h2 className="text-2xl font-bold mb-4">Authentication</h2>
-            <p className="text-[#999] mb-4">
-              Sign up for a free account to get your tracking domain:
+            <h2 className="text-2xl font-bold mb-4">Authentication & Integration</h2>
+            <p className="text-[#999] mb-6">
+              There are two primary ways to use Plots: via our web script for site analytics, or via our CLI for developer-centric insights and data management.
             </p>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-[#1a1a1a] rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border border-[#333]">1</div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-1">Create an account</h4>
-                  <p className="text-sm text-[#999]">Sign up at <Link href="/signup" className="text-white hover:underline">plots.app/signup</Link></p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="border border-[#222] bg-[#0a0a0a] rounded-lg p-6">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <span className="text-xl">🌐</span> Web Integration
+                </h3>
+                <ol className="space-y-3 text-sm text-[#999] list-decimal list-inside">
+                  <li>Create an account at <Link href="/signup" className="text-white hover:underline">plots.sh/signup</Link></li>
+                  <li>Add your domain in the settings dashboard</li>
+                  <li>Copy the tracking script into your site's <code className="text-white">&lt;head&gt;</code></li>
+                </ol>
               </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="bg-[#1a1a1a] rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border border-[#333]">2</div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-1">Add your domain</h4>
-                  <p className="text-sm text-[#999]">Register the domains you want to track</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="bg-[#1a1a1a] rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border border-[#333]">3</div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-1">Install the script</h4>
-                  <p className="text-sm text-[#999]">Copy the tracking code and add it to your site's &lt;head&gt; tag</p>
-                </div>
+
+              <div className="border border-[#222] bg-[#0a0a0a] rounded-lg p-6">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <span className="text-xl">💻</span> CLI Integration
+                </h3>
+                <ol className="space-y-3 text-sm text-[#999] list-decimal list-inside">
+                  <li>Install the CLI: <code className="text-white">npm install -g plots</code></li>
+                  <li>Authenticate: <code className="text-white">plots login</code></li>
+                  <li>Run <code className="text-white">plots</code> to open the terminal dashboard</li>
+                </ol>
               </div>
             </div>
           </section>
@@ -231,10 +228,10 @@ window.plausible("Outbound Link: Click", {
 
               <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden">
                 <div className="bg-[#1a1a1a] px-4 py-2 border-b border-[#222]">
-                  <span className="text-xs text-[#666]">Check API key</span>
+                  <span className="text-xs text-[#666]">Authenticate CLI</span>
                 </div>
                 <pre className="p-4">
-                  <code className="text-sm text-white">$ plots auth login</code>
+                  <code className="text-sm text-white">$ plots login</code>
                 </pre>
               </div>
 
@@ -317,29 +314,58 @@ window.plausible("Outbound Link: Click", {
           {/* Billing */}
           <section id="billing">
             <h2 className="text-2xl font-bold mb-4">Billing & Plans</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p className="text-[#999] mb-8">
+              Plots uses a "grows with you" pricing model. Start free and scale up as your traffic increases.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="border border-[#222] bg-[#0a0a0a] rounded-lg p-6">
-                <h3 className="text-xl font-bold mb-2">Free</h3>
+                <h3 className="text-xl font-bold mb-2">Forever Free</h3>
                 <div className="text-3xl font-bold mb-4">$0<span className="text-sm text-[#666]">/mo</span></div>
                 <ul className="space-y-2 text-sm text-[#999]">
                   <li>✓ 1,000 events/month</li>
-                  <li>✓ Unlimited domains</li>
-                  <li>✓ Basic analytics</li>
+                  <li>✓ 1 website project</li>
+                  <li>✓ Basic analytics (TUI + Web)</li>
                   <li>✓ 30-day data retention</li>
                 </ul>
               </div>
 
-              <div className="border border-[#444] bg-[#0a0a0a] rounded-lg p-6">
-                <h3 className="text-xl font-bold mb-2">Starter</h3>
-                <div className="text-3xl font-bold mb-4">$9<span className="text-sm text-[#666]">/mo</span></div>
+              <div className="border-2 border-white bg-[#0a0a0a] rounded-lg p-6 relative">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full text-[10px] font-bold tracking-wider">
+                  RECOMMENDED
+                </div>
+                <h3 className="text-xl font-bold mb-2">Pro</h3>
+                <div className="text-3xl font-bold mb-4">From $10<span className="text-sm text-[#666]">/mo</span></div>
                 <ul className="space-y-2 text-sm text-[#999]">
-                  <li>✓ 10,000 events/month</li>
-                  <li>✓ Unlimited domains</li>
-                  <li>✓ Advanced analytics</li>
-                  <li>✓ Unlimited data retention</li>
-                  <li>✓ API access</li>
-                  <li>✓ Priority support</li>
+                  <li>✓ Selective event limits (10K to 1M+)</li>
+                  <li>✓ Unlimited website projects</li>
+                  <li>✓ 1-year data retention</li>
+                  <li>✓ API & Priority support</li>
                 </ul>
+              </div>
+            </div>
+
+            <div className="bg-[#111] border border-[#222] rounded-xl p-8">
+              <h4 className="text-lg font-bold mb-4 text-center">Interactive Slider Pricing</h4>
+              <p className="text-sm text-[#666] text-center mb-6">
+                Slide to the level that fits your needs on our <Link href="/pricing" className="text-white underline">pricing page</Link>.
+              </p>
+              <div className="space-y-4 max-w-lg mx-auto">
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#999]">10,000 events</span>
+                  <span className="text-white">$10/mo</span>
+                </div>
+                <div className="w-full h-1.5 bg-[#333] rounded-full relative">
+                  <div className="absolute top-1/2 left-[20%] -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg"></div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#999]">100,000 events</span>
+                  <span className="text-white">$30/mo</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#999]">1,000,000 events</span>
+                  <span className="text-white">$80/mo</span>
+                </div>
               </div>
             </div>
           </section>
