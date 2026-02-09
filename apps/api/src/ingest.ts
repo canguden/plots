@@ -10,18 +10,19 @@ interface IngestPayload {
   path?: string;
   referrer?: string;
   timestamp?: string;
+  session_id?: string;
 }
 
 // Extract device and browser from user agent (simple)
 function parseUserAgent(ua: string) {
   const device = /mobile|android|iphone|ipad/i.test(ua) ? "Mobile" : "Desktop";
   let browser = "Other";
-  
+
   if (ua.includes("Chrome")) browser = "Chrome";
   else if (ua.includes("Firefox")) browser = "Firefox";
   else if (ua.includes("Safari")) browser = "Safari";
   else if (ua.includes("Edge")) browser = "Edge";
-  
+
   return { device, browser };
 }
 
@@ -36,23 +37,23 @@ function getCountryFromIP(ip: string): string {
 export async function ingestEvent(c: Context) {
   try {
     const payload: IngestPayload = await c.req.json();
-    
+
     if (!payload.project_id) {
       return c.json({ error: "project_id is required" }, 400);
     }
 
     const userAgent = c.req.header("user-agent") || "";
     const { device, browser } = parseUserAgent(userAgent);
-    
+
     // Get IP from various headers
     const ip = c.req.header("x-forwarded-for")?.split(",")[0] ||
-               c.req.header("x-real-ip") ||
-               "0.0.0.0";
-    
+      c.req.header("x-real-ip") ||
+      "0.0.0.0";
+
     const country = getCountryFromIP(ip);
-    
+
     const client = getClickHouseClient();
-    
+
     await client.insert({
       table: "events",
       values: [{
@@ -64,6 +65,7 @@ export async function ingestEvent(c: Context) {
         device,
         browser,
         event: payload.event || "pageview",
+        session_id: payload.session_id || "direct",
       }],
       format: "JSONEachRow",
     });

@@ -6,8 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 const ranges = [
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
-  { value: "7d", label: "Last 7 Days" },
-  { value: "30d", label: "Last 30 Days" },
+  { value: "7d", label: "7D" },
+  { value: "30d", label: "30D" },
+  { value: "year", label: "Year" },
 ];
 
 export function TimeRangeSelector() {
@@ -28,8 +29,8 @@ export function TimeRangeSelector() {
           key={range.value}
           onClick={() => handleChange(range.value)}
           className={`px-3 py-1 text-xs font-medium rounded transition-all ${currentRange === range.value
-              ? "bg-white text-black"
-              : "text-[#666] hover:text-white"
+            ? "bg-white text-black"
+            : "text-[#666] hover:text-white"
             }`}
         >
           {range.label}

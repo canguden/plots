@@ -98,6 +98,16 @@ app.get("/plots.js", async (c) => {
     return;
   }
 
+  // Session handling
+  function getSessionId() {
+    let sid = sessionStorage.getItem('plots_sid');
+    if (!sid) {
+      sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      sessionStorage.setItem('plots_sid', sid);
+    }
+    return sid;
+  }
+
   // Send event
   function send(event, data = {}) {
     const payload = {
@@ -106,6 +116,7 @@ app.get("/plots.js", async (c) => {
       path: location.pathname,
       referrer: document.referrer || '',
       timestamp: new Date().toISOString(),
+      session_id: getSessionId(),
       ...data
     };
 

@@ -47,6 +47,12 @@ function getDateRange(range: string): { start: string; end: string } {
       thirtyDaysAgo.setHours(0, 0, 0, 0);
       start = thirtyDaysAgo;
       break;
+    case "year":
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      oneYearAgo.setHours(0, 0, 0, 0);
+      start = oneYearAgo;
+      break;
     default:
       const defaultStart = new Date();
       defaultStart.setDate(defaultStart.getDate() - 7);
@@ -64,24 +70,37 @@ export async function getOverview(
   const client = getClickHouseClient();
   const { start, end } = getDateRange(range);
 
-  // Get stats
+  // Get base stats
   const statsResult = await client.query({
     query: `
       SELECT
-        count(*) as visitors,
-        count(*) as pageviews
-      FROM events
-      WHERE project_id = {projectId: String}
-        AND ts >= {start: DateTime}
-        AND ts <= {end: DateTime}
+        count(DISTINCT session_id) as visitors,
+        count(*) as pageviews,
+        AVG(duration) as avgDuration,
+        (countIf(session_events = 1) / count(DISTINCT session_id)) * 100 as bounceRate
+      FROM (
+        SELECT 
+          session_id,
+          count(*) as session_events,
+          dateDiff('second', MIN(ts), MAX(ts)) as duration
+        FROM events
+        WHERE project_id = {projectId: String}
+          AND ts >= {start: DateTime}
+          AND ts <= {end: DateTime}
+        GROUP BY session_id
+      )
     `,
     query_params: { projectId, start, end },
     format: "JSONEachRow",
   });
 
-  const stats = (await statsResult.json()) as Array<{ visitors: number; pageviews: number }>;
-  const firstRow = stats[0] || { visitors: 0, pageviews: 0 };
-  const { visitors = 0, pageviews = 0 } = firstRow;
+  const stats = (await statsResult.json()) as any[];
+  const firstRow = stats[0] || { visitors: 0, pageviews: 0, avgDuration: 0, bounceRate: 0 };
+
+  const visitors = Number(firstRow.visitors || 0);
+  const pageviews = Number(firstRow.pageviews || 0);
+  const avgDuration = Math.round(Number(firstRow.avgDuration || 0));
+  const bounceRate = Math.round(Number(firstRow.bounceRate || 0));
 
   // Get time series
   const seriesResult = await client.query({
@@ -107,12 +126,20 @@ export async function getOverview(
     query: `
       SELECT
         path,
-        count(*) as visitors,
-        count(*) as pageviews
-      FROM events
-      WHERE project_id = {projectId: String}
-        AND ts >= {start: DateTime}
-        AND ts <= {end: DateTime}
+        count(DISTINCT session_id) as visitors,
+        count(*) as pageviews,
+        (countIf(session_events = 1) / count(DISTINCT session_id)) * 100 as bounceRate
+      FROM (
+        SELECT 
+          path,
+          session_id,
+          count(*) as session_events
+        FROM events
+        WHERE project_id = {projectId: String}
+          AND ts >= {start: DateTime}
+          AND ts <= {end: DateTime}
+        GROUP BY path, session_id
+      )
       GROUP BY path
       ORDER BY visitors DESC
       LIMIT 5
@@ -127,8 +154,8 @@ export async function getOverview(
     stats: {
       visitors,
       pageviews,
-      bounceRate: 0, // Real bounce rate calculation would go here
-      avgDuration: 0,
+      bounceRate,
+      avgDuration,
     },
     series: series.map((s: any) => ({
       date: s.date,
@@ -136,9 +163,9 @@ export async function getOverview(
     })),
     topPages: topPages.map((p: any) => ({
       path: p.path,
-      visitors: p.visitors,
-      pageviews: p.pageviews,
-      bounceRate: 0,
+      visitors: Number(p.visitors),
+      pageviews: Number(p.pageviews),
+      bounceRate: Math.round(Number(p.bounceRate || 0)),
     })),
   };
 }
@@ -154,12 +181,20 @@ export async function getPages(
     query: `
       SELECT
         path,
-        count(*) as visitors,
-        count(*) as pageviews
-      FROM events
-      WHERE project_id = {projectId: String}
-        AND ts >= {start: DateTime}
-        AND ts <= {end: DateTime}
+        count(DISTINCT session_id) as visitors,
+        count(*) as pageviews,
+        (countIf(session_events = 1) / count(DISTINCT session_id)) * 100 as bounceRate
+      FROM (
+        SELECT 
+          path,
+          session_id,
+          count(*) as session_events
+        FROM events
+        WHERE project_id = {projectId: String}
+          AND ts >= {start: DateTime}
+          AND ts <= {end: DateTime}
+        GROUP BY path, session_id
+      )
       GROUP BY path
       ORDER BY visitors DESC
     `,
@@ -172,9 +207,9 @@ export async function getPages(
   return {
     pages: pages.map((p: any) => ({
       path: p.path,
-      visitors: p.visitors,
-      pageviews: p.pageviews,
-      bounceRate: 0,
+      visitors: Number(p.visitors),
+      pageviews: Number(p.pageviews),
+      bounceRate: Math.round(Number(p.bounceRate || 0)),
     })),
     total: pages.length,
   };
@@ -191,7 +226,7 @@ export async function getReferrers(
     query: `
       SELECT
         referrer as domain,
-        count(*) as visitors,
+        count(DISTINCT session_id) as visitors,
         count(*) as pageviews
       FROM events
       WHERE project_id = {projectId: String}
@@ -210,8 +245,8 @@ export async function getReferrers(
   return {
     referrers: referrers.map((r: any) => ({
       domain: r.domain,
-      visitors: r.visitors,
-      pageviews: r.pageviews,
+      visitors: Number(r.visitors),
+      pageviews: Number(r.pageviews),
     })),
     total: referrers.length,
   };
@@ -228,7 +263,7 @@ export async function getCountries(
     query: `
       SELECT
         country,
-        count(*) as visitors
+        count(DISTINCT session_id) as visitors
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}
@@ -241,14 +276,14 @@ export async function getCountries(
   });
 
   const countries = await result.json();
-  const total = countries.reduce((sum: number, c: any) => sum + c.visitors, 0);
+  const total = countries.reduce((sum: number, c: any) => sum + Number(c.visitors), 0);
 
   return {
     countries: countries.map((c: any) => ({
       country: c.country,
       countryCode: c.country,
-      visitors: c.visitors,
-      percentage: (c.visitors / total) * 100,
+      visitors: Number(c.visitors),
+      percentage: total > 0 ? (Number(c.visitors) / total) * 100 : 0,
     })),
     total: countries.length,
   };
@@ -265,7 +300,7 @@ export async function getDevices(
     query: `
       SELECT
         device,
-        count(*) as visitors
+        count(DISTINCT session_id) as visitors
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}
@@ -281,7 +316,7 @@ export async function getDevices(
     query: `
       SELECT
         browser,
-        count(*) as visitors
+        count(DISTINCT session_id) as visitors
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}
@@ -296,19 +331,19 @@ export async function getDevices(
   const devices = await devicesResult.json();
   const browsers = await browsersResult.json();
 
-  const totalDevices = devices.reduce((sum: number, d: any) => sum + d.visitors, 0);
-  const totalBrowsers = browsers.reduce((sum: number, b: any) => sum + b.visitors, 0);
+  const totalDevices = devices.reduce((sum: number, d: any) => sum + Number(d.visitors), 0);
+  const totalBrowsers = browsers.reduce((sum: number, b: any) => sum + Number(b.visitors), 0);
 
   return {
     devices: devices.map((d: any) => ({
       device: d.device,
-      visitors: d.visitors,
-      percentage: (d.visitors / totalDevices) * 100,
+      visitors: Number(d.visitors),
+      percentage: totalDevices > 0 ? (Number(d.visitors) / totalDevices) * 100 : 0,
     })),
     browsers: browsers.map((b: any) => ({
       browser: b.browser,
-      visitors: b.visitors,
-      percentage: (b.visitors / totalBrowsers) * 100,
+      visitors: Number(b.visitors),
+      percentage: totalBrowsers > 0 ? (Number(b.visitors) / totalBrowsers) * 100 : 0,
     })),
   };
 }

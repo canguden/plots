@@ -219,7 +219,7 @@ export function DashboardClient({ initialData, initialRange }: Props) {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
           <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Visitors</div>
           <div className="text-2xl font-bold text-white tabular-nums">{overview.stats.visitors.toLocaleString()}</div>
@@ -230,7 +230,15 @@ export function DashboardClient({ initialData, initialRange }: Props) {
         </div>
         <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
           <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Bounce Rate</div>
-          <div className="text-2xl font-bold text-white tabular-nums">{`${(overview.stats.bounceRate * 100).toFixed(1)}%`}</div>
+          <div className="text-2xl font-bold text-white tabular-nums">{Math.round(overview.stats.bounceRate)}%</div>
+        </div>
+        <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
+          <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Avg. Duration</div>
+          <div className="text-2xl font-bold text-white tabular-nums">
+            {overview.stats.avgDuration > 60
+              ? `${Math.floor(overview.stats.avgDuration / 60)}m ${overview.stats.avgDuration % 60}s`
+              : `${overview.stats.avgDuration}s`}
+          </div>
         </div>
       </div>
 

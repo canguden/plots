@@ -12,7 +12,7 @@ export function getClickHouseClient(): ClickHouseClient {
   if (!clickhouse) {
     const url = process.env.CLICKHOUSE_HOST;
     const password = process.env.CLICKHOUSE_PASSWORD;
-    
+
     if (!url || !password) {
       throw new Error("ClickHouse credentials not configured");
     }
@@ -22,7 +22,7 @@ export function getClickHouseClient(): ClickHouseClient {
       password,
     });
   }
-  
+
   return clickhouse;
 }
 
@@ -40,7 +40,7 @@ export function getPostgresClient() {
 
 export async function ensureSchema() {
   const client = getClickHouseClient();
-  
+
   await client.exec({
     query: `
       CREATE TABLE IF NOT EXISTS events (
@@ -51,11 +51,12 @@ export async function ensureSchema() {
         country LowCardinality(String),
         device LowCardinality(String),
         browser LowCardinality(String),
-        event LowCardinality(String)
+        event LowCardinality(String),
+        session_id String
       )
       ENGINE = MergeTree
       PARTITION BY toYYYYMM(ts)
-      ORDER BY (project_id, ts)
+      ORDER BY (project_id, ts, session_id)
     `,
   });
 }

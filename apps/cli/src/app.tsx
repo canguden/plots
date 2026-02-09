@@ -6,20 +6,23 @@ import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react"
 import { getOverview, getPages, getCountries, getProjects, getReferrers, getDevices, Project } from "./api";
 
 type ViewType = "overview" | "pages" | "countries" | "tech";
-type DateRange = "today" | "7d" | "30d";
+type DateRange = "today" | "7d" | "30d" | "year";
 type AppState = "project-select" | "dashboard" | "loading" | "error";
 
 interface OverviewData {
-  uniqueVisitors: number;
-  totalPageviews: number;
-  bounceRate: number;
-  avgDuration: number;
+  stats: {
+    visitors: number;
+    pageviews: number;
+    bounceRate: number;
+    avgDuration: number;
+  };
 }
 
 interface PageData {
   path: string;
-  views: number;
-  unique: number;
+  pageviews: number;
+  visitors: number;
+  bounceRate: number;
 }
 
 interface CountryData {
@@ -29,7 +32,7 @@ interface CountryData {
 }
 
 interface ReferrerData {
-  referrer: string;
+  domain: string;
   visitors: number;
 }
 
@@ -122,12 +125,7 @@ export function App() {
       ]);
 
       if (overviewRes) {
-        setOverview({
-          uniqueVisitors: overviewRes.uniqueVisitors || 0,
-          totalPageviews: overviewRes.totalPageviews || 0,
-          bounceRate: overviewRes.bounceRate || 0,
-          avgDuration: overviewRes.avgDuration || 0,
-        });
+        setOverview(overviewRes);
       }
 
       setPages(Array.isArray(pagesRes) ? pagesRes : (pagesRes?.pages || []));
@@ -175,9 +173,10 @@ export function App() {
       if (key.name === "4") setView("tech");
 
       // Date range shortcuts
-      if (key.name === "d") setDateRange("today");
-      if (key.name === "w") setDateRange("7d");
-      if (key.name === "m") setDateRange("30d");
+      if (key.name === "today" || key.name === "t") setDateRange("today");
+      if (key.name === "7" || key.name === "w") setDateRange("7d");
+      if (key.name === "3" || key.name === "m") setDateRange("30d");
+      if (key.name === "y") setDateRange("year");
 
       // Back to project selection
       if (key.name === "escape") {
@@ -307,22 +306,22 @@ export function App() {
         <box flexDirection="row" padding={1} paddingTop={0} gap={2} width="100%" height={10}>
           <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Visitors</span></text>
-            <text><span fg="#c9d1d9"><strong>{(overview?.uniqueVisitors || 0).toLocaleString()}</strong></span></text>
+            <text><span fg="#c9d1d9"><strong>{(overview?.stats?.visitors || 0).toLocaleString()}</strong></span></text>
           </box>
 
           <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Pageviews</span></text>
-            <text><span fg="#c9d1d9"><strong>{(overview?.totalPageviews || 0).toLocaleString()}</strong></span></text>
+            <text><span fg="#c9d1d9"><strong>{(overview?.stats?.pageviews || 0).toLocaleString()}</strong></span></text>
           </box>
 
           <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Bounce Rate</span></text>
-            <text><span fg="#f79c6a"><strong>{overview?.bounceRate || 0}%</strong></span></text>
+            <text><span fg="#f79c6a"><strong>{overview?.stats?.bounceRate || 0}%</strong></span></text>
           </box>
 
           <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Avg Duration</span></text>
-            <text><span fg="#d2a8ff"><strong>{Math.floor((overview?.avgDuration || 0) / 60)}m {(overview?.avgDuration || 0) % 60}s</strong></span></text>
+            <text><span fg="#d2a8ff"><strong>{Math.floor((overview?.stats?.avgDuration || 0) / 60)}m {(overview?.stats?.avgDuration || 0) % 60}s</strong></span></text>
           </box>
         </box>
 
@@ -417,10 +416,10 @@ function OverviewView({ pages, countries, referrers }: { pages: PageData[], coun
                       <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                     </box>
                     <box width={10}>
-                      <text><span fg="#58a6ff">{(page.views || 0).toLocaleString()}</span></text>
+                      <text><span fg="#58a6ff">{(page.pageviews || 0).toLocaleString()}</span></text>
                     </box>
                     <box width={10}>
-                      <text><span fg="#79c0ff">{(page.unique || 0).toLocaleString()}</span></text>
+                      <text><span fg="#79c0ff">{(page.visitors || 0).toLocaleString()}</span></text>
                     </box>
                   </box>
                 );
@@ -520,10 +519,10 @@ function PagesView({ pages }: { pages: PageData[] }) {
                   <text><span fg={i < 3 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                 </box>
                 <box width={10}>
-                  <text><span fg="#58a6ff">{(page.views || 0).toLocaleString()}</span></text>
+                  <text><span fg="#58a6ff">{(page.pageviews || 0).toLocaleString()}</span></text>
                 </box>
                 <box width={10}>
-                  <text><span fg="#79c0ff">{(page.unique || 0).toLocaleString()}</span></text>
+                  <text><span fg="#79c0ff">{(page.visitors || 0).toLocaleString()}</span></text>
                 </box>
               </box>
             );
