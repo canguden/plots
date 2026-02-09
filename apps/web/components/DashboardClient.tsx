@@ -217,8 +217,9 @@ export function DashboardClient({ initialData, initialRange }: Props) {
     );
   }
 
-  // No data state
-  const hasNoData = overview.stats.visitors === 0 && overview.stats.pageviews === 0;
+  // Only show onboarding banner when on "today" with no data (truly new project)
+  // Don't show it for Yesterday/7D/30D which may simply have no historical data
+  const hasNoData = range === "today" && overview.stats.visitors === 0 && overview.stats.pageviews === 0;
 
   return (
     <div className="space-y-6">
@@ -288,10 +289,14 @@ export function DashboardClient({ initialData, initialRange }: Props) {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
           <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Visitors</div>
           <div className="text-2xl font-bold text-white tabular-nums">{overview.stats.visitors.toLocaleString()}</div>
+        </div>
+        <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
+          <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Sessions</div>
+          <div className="text-2xl font-bold text-white tabular-nums">{(overview.stats.sessions || 0).toLocaleString()}</div>
         </div>
         <div className="border border-[#222] bg-[#111] rounded-lg p-4 hover:border-[#333] transition-colors">
           <div className="text-xs font-medium text-[#666] uppercase tracking-wider mb-2">Pageviews</div>

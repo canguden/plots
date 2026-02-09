@@ -74,11 +74,11 @@ export async function getOverview(
   const client = getClickHouseClient();
   const { start, end } = getDateRange(range);
 
-  // Get base stats
+  // Get base stats - session metrics
   const statsResult = await client.query({
     query: `
       SELECT
-        count(DISTINCT session_id) as visitors,
+        count(DISTINCT session_id) as sessions,
         count(*) as pageviews,
         AVG(duration) as avgDuration,
         (countIf(session_events = 1) / count(DISTINCT session_id)) * 100 as bounceRate
@@ -98,10 +98,27 @@ export async function getOverview(
     format: "JSONEachRow",
   });
 
-  const stats = (await statsResult.json()) as any[];
-  const firstRow = stats[0] || { visitors: 0, pageviews: 0, avgDuration: 0, bounceRate: 0 };
+  // Get unique visitors count
+  const visitorsResult = await client.query({
+    query: `
+      SELECT
+        count(DISTINCT if(visitor_id != '', visitor_id, session_id)) as visitors
+      FROM events
+      WHERE project_id = {projectId: String}
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
+    `,
+    query_params: { projectId, start, end },
+    format: "JSONEachRow",
+  });
 
-  const visitors = Number(firstRow.visitors || 0);
+  const stats = (await statsResult.json()) as any[];
+  const visitorsStats = (await visitorsResult.json()) as any[];
+  const firstRow = stats[0] || { sessions: 0, pageviews: 0, avgDuration: 0, bounceRate: 0 };
+  const visitorsRow = visitorsStats[0] || { visitors: 0 };
+
+  const visitors = Number(visitorsRow.visitors || 0);
+  const sessions = Number(firstRow.sessions || 0);
   const pageviews = Number(firstRow.pageviews || 0);
   const avgDuration = Math.round(Number(firstRow.avgDuration || 0));
   const bounceRate = Math.round(Number(firstRow.bounceRate || 0));
@@ -161,6 +178,7 @@ export async function getOverview(
   return {
     stats: {
       visitors,
+      sessions,
       pageviews,
       bounceRate,
       avgDuration,

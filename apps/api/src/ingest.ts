@@ -11,6 +11,7 @@ interface IngestPayload {
   referrer?: string;
   timestamp?: string;
   session_id?: string;
+  visitor_id?: string;
 }
 
 // Extract device, browser, and OS from user agent (simple)
@@ -74,6 +75,7 @@ export async function ingestEvent(c: Context) {
         os,
         event: payload.event || "pageview",
         session_id: payload.session_id || "direct",
+        visitor_id: payload.visitor_id || payload.session_id || "direct",
       }],
       format: "JSONEachRow",
     });

@@ -9,6 +9,7 @@ export interface TimeRange {
 
 export interface OverviewStats {
   visitors: number;
+  sessions: number;
   pageviews: number;
   bounceRate: number;
   avgDuration: number;

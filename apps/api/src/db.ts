@@ -53,7 +53,8 @@ export async function ensureSchema() {
         browser LowCardinality(String),
         os LowCardinality(String) DEFAULT '',
         event LowCardinality(String),
-        session_id String
+        session_id String,
+        visitor_id String DEFAULT ''
       )
       ENGINE = MergeTree
       PARTITION BY toYYYYMM(ts)
@@ -66,7 +67,10 @@ export async function ensureSchema() {
     await client.exec({
       query: `ALTER TABLE events ADD COLUMN IF NOT EXISTS os LowCardinality(String) DEFAULT ''`,
     });
+    await client.exec({
+      query: `ALTER TABLE events ADD COLUMN IF NOT EXISTS visitor_id String DEFAULT ''`,
+    });
   } catch (e) {
-    // Column might already exist, ignore
+    // Columns might already exist, ignore
   }
 }
