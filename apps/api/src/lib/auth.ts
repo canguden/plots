@@ -37,7 +37,6 @@ export const auth = betterAuth({
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     cookieOptions: {
-      domain: process.env.NODE_ENV === "production" ? ".plots.sh" : undefined,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   },
