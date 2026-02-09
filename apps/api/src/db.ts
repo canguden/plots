@@ -51,6 +51,7 @@ export async function ensureSchema() {
         country LowCardinality(String),
         device LowCardinality(String),
         browser LowCardinality(String),
+        os LowCardinality(String) DEFAULT '',
         event LowCardinality(String),
         session_id String
       )
@@ -59,4 +60,13 @@ export async function ensureSchema() {
       ORDER BY (project_id, ts, session_id)
     `,
   });
+
+  // Add os column if table already exists without it
+  try {
+    await client.exec({
+      query: `ALTER TABLE events ADD COLUMN IF NOT EXISTS os LowCardinality(String) DEFAULT ''`,
+    });
+  } catch (e) {
+    // Column might already exist, ignore
+  }
 }

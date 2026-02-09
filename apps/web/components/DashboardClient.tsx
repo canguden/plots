@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import type {
   OverviewResponse,
   PagesResponse,
@@ -11,6 +12,8 @@ import type {
 import { getOverview, getPages, getReferrers, getCountries, getDevices } from "../lib/api-client";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { AnalyticsChart } from "./AnalyticsChart";
+import { Monitor, Smartphone, Tablet, HelpCircle } from "lucide-react";
+import "flag-icons/css/flag-icons.min.css";
 
 interface Project {
   id: string;
@@ -31,8 +34,78 @@ interface Props {
 
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
+// Map country name to ISO 3166-1 alpha-2 code for flag icons
+function getCountryCode(country: string): string {
+  const countryMap: Record<string, string> = {
+    'United States': 'us', 'US': 'us', 'USA': 'us',
+    'United Kingdom': 'gb', 'UK': 'gb', 'GB': 'gb',
+    'Germany': 'de', 'DE': 'de',
+    'France': 'fr', 'FR': 'fr',
+    'Spain': 'es', 'ES': 'es',
+    'Italy': 'it', 'IT': 'it',
+    'Canada': 'ca', 'CA': 'ca',
+    'Australia': 'au', 'AU': 'au',
+    'Japan': 'jp', 'JP': 'jp',
+    'China': 'cn', 'CN': 'cn',
+    'India': 'in', 'IN': 'in',
+    'Brazil': 'br', 'BR': 'br',
+    'Netherlands': 'nl', 'NL': 'nl',
+    'Sweden': 'se', 'SE': 'se',
+    'Norway': 'no', 'NO': 'no',
+    'Denmark': 'dk', 'DK': 'dk',
+    'Finland': 'fi', 'FI': 'fi',
+    'Poland': 'pl', 'PL': 'pl',
+    'Belgium': 'be', 'BE': 'be',
+    'Austria': 'at', 'AT': 'at',
+    'Switzerland': 'ch', 'CH': 'ch',
+    'Portugal': 'pt', 'PT': 'pt',
+    'Ireland': 'ie', 'IE': 'ie',
+    'South Korea': 'kr', 'KR': 'kr',
+    'Mexico': 'mx', 'MX': 'mx',
+    'Argentina': 'ar', 'AR': 'ar',
+    'Colombia': 'co', 'CO': 'co',
+    'Turkey': 'tr', 'TR': 'tr',
+    'Russia': 'ru', 'RU': 'ru',
+    'Ukraine': 'ua', 'UA': 'ua',
+    'Israel': 'il', 'IL': 'il',
+    'South Africa': 'za', 'ZA': 'za',
+    'Nigeria': 'ng', 'NG': 'ng',
+    'Egypt': 'eg', 'EG': 'eg',
+    'Singapore': 'sg', 'SG': 'sg',
+    'Malaysia': 'my', 'MY': 'my',
+    'Thailand': 'th', 'TH': 'th',
+    'Vietnam': 'vn', 'VN': 'vn',
+    'Philippines': 'ph', 'PH': 'ph',
+    'Indonesia': 'id', 'ID': 'id',
+    'Taiwan': 'tw', 'TW': 'tw',
+    'Hong Kong': 'hk', 'HK': 'hk',
+    'New Zealand': 'nz', 'NZ': 'nz',
+    'Czech Republic': 'cz', 'CZ': 'cz',
+    'Romania': 'ro', 'RO': 'ro',
+    'Hungary': 'hu', 'HU': 'hu',
+    'Greece': 'gr', 'GR': 'gr',
+    'Chile': 'cl', 'CL': 'cl',
+    'Peru': 'pe', 'PE': 'pe',
+  };
+  // Try direct match, then try 2-letter code lowercase
+  const code = country.length === 2 ? country.toLowerCase() : countryMap[country];
+  return code || '';
+}
+
+function DeviceIconInline({ device }: { device: string }) {
+  const d = device.toLowerCase();
+  const iconSize = 16;
+  const cls = "text-[#888]";
+  if (d.includes('mobile') || d.includes('phone')) return <Smartphone size={iconSize} className={cls} />;
+  if (d.includes('tablet') || d.includes('ipad')) return <Tablet size={iconSize} className={cls} />;
+  if (d.includes('desktop') || d.includes('mac') || d.includes('windows') || d.includes('linux') || d.includes('pc')) return <Monitor size={iconSize} className={cls} />;
+  return <HelpCircle size={iconSize} className={cls} />;
+}
+
 export function DashboardClient({ initialData, initialRange }: Props) {
-  const [range, setRange] = useState(initialRange);
+  const searchParams = useSearchParams();
+  const currentRange = searchParams.get("range") || initialRange;
+  const [range, setRange] = useState(currentRange);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [overview, setOverview] = useState(initialData.overview);
@@ -101,17 +174,13 @@ export function DashboardClient({ initialData, initialRange }: Props) {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Refetch when range changes
+  // Refetch when URL range param changes (from TimeRangeSelector)
   useEffect(() => {
-    // Get range from URL
-    const params = new URLSearchParams(window.location.search);
-    const urlRange = params.get("range") || "today";
-
-    if (urlRange !== range) {
-      setRange(urlRange);
-      fetchData(urlRange);
+    if (currentRange !== range) {
+      setRange(currentRange);
+      fetchData(currentRange);
     }
-  }, [range, fetchData]);
+  }, [currentRange]);
 
   // Calculate max value for chart scaling
   const maxValue = Math.max(...overview.series.map(s => s.value), 1);
@@ -292,12 +361,22 @@ export function DashboardClient({ initialData, initialRange }: Props) {
             <h2 className="text-sm font-semibold text-white">Countries</h2>
           </div>
           <div className="divide-y divide-[#1a1a1a]">
-            {countries.countries.slice(0, 5).map((country, i) => (
-              <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center justify-between">
-                <div className="text-sm text-white truncate flex-1">{country.country}</div>
-                <div className="text-sm text-[#666] tabular-nums ml-4">{country.percentage.toFixed(0)}%</div>
-              </div>
-            ))}
+            {countries.countries.slice(0, 5).map((country, i) => {
+              const code = getCountryCode(country.country || country.countryCode);
+              return (
+                <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-white truncate flex-1">
+                    {code ? (
+                      <span className={`fi fi-${code} rounded-sm`} style={{ fontSize: '16px' }} />
+                    ) : (
+                      <span className="text-[#666]">🌍</span>
+                    )}
+                    <span>{country.country}</span>
+                  </div>
+                  <div className="text-sm text-[#666] tabular-nums ml-4">{country.percentage.toFixed(0)}%</div>
+                </div>
+              );
+            })}
             {countries.countries.length === 0 && (
               <div className="px-6 py-8 text-center text-sm text-[#666]">No data</div>
             )}
@@ -310,35 +389,52 @@ export function DashboardClient({ initialData, initialRange }: Props) {
             <h2 className="text-sm font-semibold text-white">Devices</h2>
           </div>
           <div className="divide-y divide-[#1a1a1a]">
-            {devices.devices.slice(0, 5).map((device, i) => {
-              const deviceLower = device.device.toLowerCase();
-              let icon = '';
-
-              if (deviceLower.includes('mac') || deviceLower.includes('ios')) {
-                icon = ' ▄▄▄\n█   █\n█▄▄▄█';
-              } else if (deviceLower.includes('windows') || deviceLower.includes('pc')) {
-                icon = '█ █\n█▄█\n█ █';
-              } else if (deviceLower.includes('linux')) {
-                icon = ' ▄█▄\n█▀▀▀\n ▀▀▀';
-              } else if (deviceLower.includes('android')) {
-                icon = ' ▄ ▄\n█▀▀█\n█▄▄█';
-              } else {
-                icon = '▄█▄\n█▀█\n▀▀▀';
-              }
-
-              return (
-                <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center gap-4">
-                  <pre className="text-[10px] leading-[1.1] text-[#666] whitespace-pre">
-                    {icon}
-                  </pre>
-                  <div className="flex-1 flex items-center justify-between">
-                    <div className="text-sm text-white truncate flex-1">{device.device}</div>
-                    <div className="text-sm text-[#666] tabular-nums ml-4">{device.percentage.toFixed(0)}%</div>
-                  </div>
+            {devices.devices.slice(0, 5).map((device, i) => (
+              <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center gap-3">
+                <DeviceIconInline device={device.device} />
+                <div className="flex-1 flex items-center justify-between">
+                  <div className="text-sm text-white truncate flex-1">{device.device}</div>
+                  <div className="text-sm text-[#666] tabular-nums ml-4">{device.percentage.toFixed(0)}%</div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
             {devices.devices.length === 0 && (
+              <div className="px-6 py-8 text-center text-sm text-[#666]">No data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Operating Systems */}
+        <div className="border border-[#222] bg-[#111] rounded-lg overflow-hidden">
+          <div className="px-6 py-3 border-b border-[#222]">
+            <h2 className="text-sm font-semibold text-white">Operating Systems</h2>
+          </div>
+          <div className="divide-y divide-[#1a1a1a]">
+            {(devices.os || []).slice(0, 5).map((osItem, i) => (
+              <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center justify-between">
+                <div className="text-sm text-white truncate flex-1">{osItem.os}</div>
+                <div className="text-sm text-[#666] tabular-nums ml-4">{osItem.percentage.toFixed(0)}%</div>
+              </div>
+            ))}
+            {(!devices.os || devices.os.length === 0) && (
+              <div className="px-6 py-8 text-center text-sm text-[#666]">No data yet</div>
+            )}
+          </div>
+        </div>
+
+        {/* Browsers */}
+        <div className="border border-[#222] bg-[#111] rounded-lg overflow-hidden">
+          <div className="px-6 py-3 border-b border-[#222]">
+            <h2 className="text-sm font-semibold text-white">Browsers</h2>
+          </div>
+          <div className="divide-y divide-[#1a1a1a]">
+            {devices.browsers.slice(0, 5).map((browser, i) => (
+              <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center justify-between">
+                <div className="text-sm text-white truncate flex-1">{browser.browser}</div>
+                <div className="text-sm text-[#666] tabular-nums ml-4">{browser.percentage.toFixed(0)}%</div>
+              </div>
+            ))}
+            {devices.browsers.length === 0 && (
               <div className="px-6 py-8 text-center text-sm text-[#666]">No data</div>
             )}
           </div>

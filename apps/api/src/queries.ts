@@ -335,11 +335,30 @@ export async function getDevices(
     format: "JSONEachRow",
   });
 
+  const osResult = await client.query({
+    query: `
+      SELECT
+        os,
+        count(DISTINCT session_id) as visitors
+      FROM events
+      WHERE project_id = {projectId: String}
+        AND ts >= {start: DateTime}
+        AND ts <= {end: DateTime}
+        AND os != ''
+      GROUP BY os
+      ORDER BY visitors DESC
+    `,
+    query_params: { projectId, start, end },
+    format: "JSONEachRow",
+  });
+
   const devices = await devicesResult.json();
   const browsers = await browsersResult.json();
+  const osData = await osResult.json();
 
   const totalDevices = devices.reduce((sum: number, d: any) => sum + Number(d.visitors), 0);
   const totalBrowsers = browsers.reduce((sum: number, b: any) => sum + Number(b.visitors), 0);
+  const totalOS = osData.reduce((sum: number, o: any) => sum + Number(o.visitors), 0);
 
   return {
     devices: devices.map((d: any) => ({
@@ -351,6 +370,11 @@ export async function getDevices(
       browser: b.browser,
       visitors: Number(b.visitors),
       percentage: totalBrowsers > 0 ? (Number(b.visitors) / totalBrowsers) * 100 : 0,
+    })),
+    os: osData.map((o: any) => ({
+      os: o.os,
+      visitors: Number(o.visitors),
+      percentage: totalOS > 0 ? (Number(o.visitors) / totalOS) * 100 : 0,
     })),
   };
 }

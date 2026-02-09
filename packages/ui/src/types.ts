@@ -51,6 +51,12 @@ export interface TopBrowser {
   percentage: number;
 }
 
+export interface TopOS {
+  os: string;
+  visitors: number;
+  percentage: number;
+}
+
 export interface CustomEvent {
   name: string;
   count: number;
@@ -81,6 +87,7 @@ export interface CountriesResponse {
 export interface DevicesResponse {
   devices: TopDevice[];
   browsers: TopBrowser[];
+  os: TopOS[];
 }
 
 export interface EventsResponse {
