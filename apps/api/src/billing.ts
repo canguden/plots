@@ -21,36 +21,40 @@ export function getStripeClient(): Stripe {
   return stripe;
 }
 
-// Tier configuration
-export const TIER_CONFIG: Record<string, { events: number; projects: number; retention: string }> = {
-  free: { events: 1000, projects: 1, retention: "30 days" },
-  starter: { events: 10000, projects: 3, retention: "90 days" },
-  pro: { events: 100000, projects: 10, retention: "1 year" },
-  business: { events: 1000000, projects: 999, retention: "Unlimited" },
-};
+// Pro plan levels — "Plots grows with you"
+// Each level is a separate Stripe Price on the same Product
+export const PRO_LEVELS = [
+  { events: 10_000, price: 10, label: "10K", envKey: "STRIPE_PRO_10K_PRICE_ID" },
+  { events: 50_000, price: 20, label: "50K", envKey: "STRIPE_PRO_50K_PRICE_ID" },
+  { events: 100_000, price: 30, label: "100K", envKey: "STRIPE_PRO_100K_PRICE_ID" },
+  { events: 500_000, price: 50, label: "500K", envKey: "STRIPE_PRO_500K_PRICE_ID" },
+  { events: 1_000_000, price: 80, label: "1M", envKey: "STRIPE_PRO_1M_PRICE_ID" },
+];
 
-// Map tier names to env var price IDs
-const TIER_PRICE_ENV: Record<string, string> = {
-  starter: "STRIPE_STARTER_PRICE_ID",
-  pro: "STRIPE_PRO_PRICE_ID",
-  business: "STRIPE_BUSINESS_PRICE_ID",
-};
+// Get event limit for a user based on their tier
+export function getEventLimit(tier: string): number {
+  if (tier === 'free') return 1000;
+  // tier format: "pro_10k", "pro_50k", etc.
+  const level = PRO_LEVELS.find(l => `pro_${l.label.toLowerCase()}` === tier);
+  if (level) return level.events;
+  // Legacy tiers
+  if (tier === 'starter') return 10000;
+  if (tier === 'pro') return 100000;
+  return 1000;
+}
 
 export async function getUsage(userId: string) {
   const client = getClickHouseClient();
 
-  // Get the user to check their subscription tier
   const user = await getUserById(userId);
   if (!user) {
     throw new Error("User not found");
   }
 
-  // Determine event limit based on subscription tier
   const tier = user.subscription_tier || 'free';
-  const config = TIER_CONFIG[tier] || TIER_CONFIG.free;
-  const limit = config.events;
+  const limit = getEventLimit(tier);
 
-  // Get current month's event count for all user's projects
+  // Get current month's event count
   const result = await client.query({
     query: `
       SELECT COUNT(*) as count
@@ -78,15 +82,15 @@ export async function getUsage(userId: string) {
 export async function createCheckoutSession(userId: string, tier: string) {
   const client = getStripeClient();
 
-  // Validate tier
-  const priceEnvKey = TIER_PRICE_ENV[tier];
-  if (!priceEnvKey) {
-    throw new Error(`Invalid tier: ${tier}. Must be one of: ${Object.keys(TIER_PRICE_ENV).join(', ')}`);
+  // Find the matching level
+  const level = PRO_LEVELS.find(l => `pro_${l.label.toLowerCase()}` === tier);
+  if (!level) {
+    throw new Error(`Invalid tier: ${tier}. Must be one of: ${PRO_LEVELS.map(l => `pro_${l.label.toLowerCase()}`).join(', ')}`);
   }
 
-  const priceId = process.env[priceEnvKey];
+  const priceId = process.env[level.envKey];
   if (!priceId) {
-    throw new Error(`Price ID not configured for tier: ${tier}. Set ${priceEnvKey} in environment.`);
+    throw new Error(`Price ID not configured for tier: ${tier}. Set ${level.envKey} in environment.`);
   }
 
   // Get user
@@ -102,9 +106,7 @@ export async function createCheckoutSession(userId: string, tier: string) {
     const customer = await client.customers.create({
       email: user.email,
       name: user.name,
-      metadata: {
-        userId: user.id,
-      },
+      metadata: { userId: user.id },
     });
 
     customerId = customer.id;
@@ -114,18 +116,10 @@ export async function createCheckoutSession(userId: string, tier: string) {
   const session = await client.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
-    line_items: [
-      {
-        price: priceId,
-        quantity: 1,
-      },
-    ],
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${process.env.WEB_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.WEB_URL}/pricing`,
-    metadata: {
-      userId,
-      tier,
-    },
+    metadata: { userId, tier },
   });
 
   return session;
@@ -151,14 +145,14 @@ export async function createPortalSession(userId: string) {
   return session;
 }
 
-// Helper to determine tier from Stripe price ID
+// Determine tier from Stripe price ID
 function getTierFromPriceId(priceId: string): string {
-  for (const [tier, envKey] of Object.entries(TIER_PRICE_ENV)) {
-    if (process.env[envKey] === priceId) {
-      return tier;
+  for (const level of PRO_LEVELS) {
+    if (process.env[level.envKey] === priceId) {
+      return `pro_${level.label.toLowerCase()}`;
     }
   }
-  return 'starter'; // fallback
+  return 'pro_10k'; // fallback
 }
 
 export async function handleWebhook(body: string, signature: string) {
@@ -184,7 +178,7 @@ export async function handleWebhook(body: string, signature: string) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.userId;
-      const tier = session.metadata?.tier || 'starter';
+      const tier = session.metadata?.tier || 'pro_10k';
 
       if (userId && session.customer) {
         await updateUserStripeInfo(
@@ -208,8 +202,6 @@ export async function handleWebhook(body: string, signature: string) {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
 
-      // Find user and mark as past_due
-      const clickhouse = getClickHouseClient();
       const { db } = await import("./db").then(m => ({ db: m.getPostgresClient().db }));
       const { user: userTable } = await import("./db-schema");
       const { eq } = await import("drizzle-orm");
@@ -233,11 +225,9 @@ export async function handleWebhook(body: string, signature: string) {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      // Determine the tier from the subscription's price
       const priceId = subscription.items.data[0]?.price?.id;
-      const tier = priceId ? getTierFromPriceId(priceId) : 'starter';
+      const tier = priceId ? getTierFromPriceId(priceId) : 'pro_10k';
 
-      // Find user by Stripe customer ID
       const { db } = await import("./db").then(m => ({ db: m.getPostgresClient().db }));
       const { user: userTable } = await import("./db-schema");
       const { eq } = await import("drizzle-orm");
@@ -246,15 +236,8 @@ export async function handleWebhook(body: string, signature: string) {
 
       if (result.length > 0) {
         const userId = result[0].id;
-        const status = subscription.status;
-
-        await updateUserStripeInfo(
-          userId,
-          customerId,
-          tier,
-          status
-        );
-        console.log(`✅ Subscription updated for user ${userId}: ${tier} (${status})`);
+        await updateUserStripeInfo(userId, customerId, tier, subscription.status);
+        console.log(`✅ Subscription updated for user ${userId}: ${tier} (${subscription.status})`);
       }
       break;
     }
@@ -263,7 +246,6 @@ export async function handleWebhook(body: string, signature: string) {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      // Find user and downgrade to free tier
       const { db } = await import("./db").then(m => ({ db: m.getPostgresClient().db }));
       const { user: userTable } = await import("./db-schema");
       const { eq } = await import("drizzle-orm");
@@ -272,13 +254,7 @@ export async function handleWebhook(body: string, signature: string) {
 
       if (result.length > 0) {
         const userId = result[0].id;
-
-        await updateUserStripeInfo(
-          userId,
-          customerId,
-          'free',
-          'canceled'
-        );
+        await updateUserStripeInfo(userId, customerId, 'free', 'canceled');
         console.log(`✅ Subscription cancelled for user ${userId}`);
       }
       break;

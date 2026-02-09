@@ -451,21 +451,15 @@ export default function SettingsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-white">
-                  {usage && usage.limit === 1000 ? 'Free Plan' :
-                    usage && usage.limit === 10000 ? 'Starter Plan' :
-                      usage && usage.limit === 100000 ? 'Pro Plan' :
-                        usage && usage.limit === 1000000 ? 'Business Plan' :
-                          'Free Plan'}
+                  {usage && usage.limit > 1000
+                    ? `Pro Plan — ${usage.limit.toLocaleString()} events`
+                    : 'Free Plan'}
                 </span>
                 <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${usage && usage.limit > 1000
-                    ? 'bg-white/10 text-white'
-                    : 'bg-[#222] text-[#666]'
+                  ? 'bg-white/10 text-white'
+                  : 'bg-[#222] text-[#666]'
                   }`}>
-                  {usage && usage.limit === 1000 ? 'FREE' :
-                    usage && usage.limit === 10000 ? 'STARTER' :
-                      usage && usage.limit === 100000 ? 'PRO' :
-                        usage && usage.limit === 1000000 ? 'BUSINESS' :
-                          'FREE'}
+                  {usage && usage.limit > 1000 ? 'PRO' : 'FREE'}
                 </span>
               </div>
               <div className="text-xs text-[#666] mt-1">
@@ -490,8 +484,8 @@ export default function SettingsPage() {
               <div className="w-full bg-[#1a1a1a] rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all ${usage.percentage > 90 ? 'bg-red-500' :
-                      usage.percentage > 70 ? 'bg-yellow-500' :
-                        'bg-white'
+                    usage.percentage > 70 ? 'bg-yellow-500' :
+                      'bg-white'
                     }`}
                   style={{ width: `${Math.min(usage.percentage, 100)}%` }}
                 />

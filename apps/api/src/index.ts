@@ -24,7 +24,7 @@ import {
   getDevices,
   getEvents,
 } from "./queries";
-import { getUsage, createCheckoutSession, createPortalSession, handleWebhook, TIER_CONFIG } from "./billing";
+import { getUsage, createCheckoutSession, createPortalSession, handleWebhook, PRO_LEVELS, getEventLimit } from "./billing";
 import {
   createAPIToken,
   getUserProjects,
@@ -404,12 +404,16 @@ app.get("/api/subscription", async (c) => {
   }
 
   const tier = user.subscription_tier || 'free';
-  const config = TIER_CONFIG[tier] || TIER_CONFIG.free;
+  const eventLimit = getEventLimit(tier);
+  const isPro = tier !== 'free';
+  const currentLevel = isPro ? PRO_LEVELS.find(l => `pro_${l.label.toLowerCase()}` === tier) : null;
 
   return c.json({
     tier,
+    isPro,
     status: user.subscription_status || 'inactive',
-    limits: config,
+    eventLimit,
+    currentLevel: currentLevel ? { events: currentLevel.events, price: currentLevel.price, label: currentLevel.label } : null,
     hasStripeCustomer: !!user.stripe_customer_id,
   });
 });
