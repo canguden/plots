@@ -9,8 +9,10 @@ import type {
   UsageStats,
 } from "@plots/ui";
 
-// Client-side API calls go through the Next.js proxy at /api
-const API_BASE = "";
+// Client-side API calls go directly to API server with cookies
+const API_BASE = typeof window !== "undefined"
+  ? (process.env.NEXT_PUBLIC_API_URL || "https://api.plots.sh")
+  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001");
 
 async function fetcher<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
