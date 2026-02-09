@@ -13,7 +13,7 @@ const ranges = [
 export function TimeRangeSelector() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentRange = searchParams.get("range") || "7d";
+  const currentRange = searchParams.get("range") || "today";
 
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -27,11 +27,10 @@ export function TimeRangeSelector() {
         <button
           key={range.value}
           onClick={() => handleChange(range.value)}
-          className={`px-3 py-1 text-xs font-medium rounded transition-all ${
-            currentRange === range.value
+          className={`px-3 py-1 text-xs font-medium rounded transition-all ${currentRange === range.value
               ? "bg-white text-black"
               : "text-[#666] hover:text-white"
-          }`}
+            }`}
         >
           {range.label}
         </button>

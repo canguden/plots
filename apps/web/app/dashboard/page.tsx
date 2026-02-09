@@ -32,17 +32,17 @@ export default function DashboardPage() {
         const res = await fetch(`${apiUrl}/api/projects`, {
           credentials: 'include',
         });
-        
+
         if (res.ok) {
           const projectsData = await res.json();
           setProjects(projectsData || []);
-          
+
           // If no projects, redirect to onboarding
           if (!projectsData || projectsData.length === 0) {
             router.push('/onboarding');
             return;
           }
-          
+
           // Select first project by default
           setSelectedProject(projectsData[0].id);
         }
@@ -51,7 +51,7 @@ export default function DashboardPage() {
         setError("Failed to load projects");
       }
     }
-    
+
     fetchProjects();
   }, [user, router]);
 
@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
     async function fetchData() {
       try {
-        const range = "7d";
+        const range = "today";
         const [overview, pages, referrers, countries, devices] = await Promise.all([
           getOverview(range, selectedProject || undefined),
           getPages(range, selectedProject || undefined),
@@ -69,7 +69,7 @@ export default function DashboardPage() {
           getCountries(range, selectedProject || undefined),
           getDevices(range, selectedProject || undefined),
         ]);
-        
+
         setData({ overview, pages, referrers, countries, devices });
         setError(null);
       } catch (err: any) {
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         setDataLoading(false);
       }
     }
-    
+
     fetchData();
   }, [user, selectedProject]);
 
@@ -127,7 +127,7 @@ export default function DashboardPage() {
   return (
     <DashboardClient
       initialData={data}
-      initialRange="7d"
+      initialRange="today"
     />
   );
 }

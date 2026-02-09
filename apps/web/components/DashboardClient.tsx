@@ -69,7 +69,7 @@ export function DashboardClient({ initialData, initialRange }: Props) {
   const fetchData = useCallback(async (newRange?: string) => {
     const targetRange = newRange || range;
     setIsRefreshing(true);
-    
+
     try {
       const [overviewData, pagesData, referrersData, countriesData, devicesData] = await Promise.all([
         getOverview(targetRange),
@@ -78,7 +78,7 @@ export function DashboardClient({ initialData, initialRange }: Props) {
         getCountries(targetRange),
         getDevices(targetRange),
       ]);
-      
+
       setOverview(overviewData);
       setPages(pagesData);
       setReferrers(referrersData);
@@ -105,8 +105,8 @@ export function DashboardClient({ initialData, initialRange }: Props) {
   useEffect(() => {
     // Get range from URL
     const params = new URLSearchParams(window.location.search);
-    const urlRange = params.get("range") || "7d";
-    
+    const urlRange = params.get("range") || "today";
+
     if (urlRange !== range) {
       setRange(urlRange);
       fetchData(urlRange);
@@ -205,7 +205,7 @@ export function DashboardClient({ initialData, initialRange }: Props) {
                 <summary className="text-[#666] hover:text-white cursor-pointer">Show tracking script</summary>
                 <div className="mt-3 bg-black border border-[#222] rounded p-3">
                   <pre className="text-xs text-white overflow-x-auto">
-{`<script
+                    {`<script
   defer
   src="https://plots.sh/plots.js"
   data-project="${selectedProject}"
@@ -305,7 +305,7 @@ export function DashboardClient({ initialData, initialRange }: Props) {
             {devices.devices.slice(0, 5).map((device, i) => {
               const deviceLower = device.device.toLowerCase();
               let icon = '';
-              
+
               if (deviceLower.includes('mac') || deviceLower.includes('ios')) {
                 icon = ' ▄▄▄\n█   █\n█▄▄▄█';
               } else if (deviceLower.includes('windows') || deviceLower.includes('pc')) {
@@ -317,11 +317,11 @@ export function DashboardClient({ initialData, initialRange }: Props) {
               } else {
                 icon = '▄█▄\n█▀█\n▀▀▀';
               }
-              
+
               return (
                 <div key={i} className="px-6 py-3 hover:bg-[#1a1a1a] transition-colors flex items-center gap-4">
                   <pre className="text-[10px] leading-[1.1] text-[#666] whitespace-pre">
-{icon}
+                    {icon}
                   </pre>
                   <div className="flex-1 flex items-center justify-between">
                     <div className="text-sm text-white truncate flex-1">{device.device}</div>

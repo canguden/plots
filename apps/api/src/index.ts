@@ -81,7 +81,7 @@ app.get("/plots.js", async (c) => {
   
   const script = document.currentScript;
   const projectId = script?.getAttribute('data-project');
-  const apiUrl = script?.getAttribute('data-api') || '${process.env.API_URL || 'http://localhost:3001'}';
+  const apiUrl = script?.getAttribute('data-api') || '${process.env.API_URL || 'https://api.plots.sh'}';
   
   if (!projectId) {
     console.warn('[Plots] No project ID provided');
@@ -172,13 +172,13 @@ app.post("/auth/signup", async (c) => {
       name: body.name,
     },
   });
-  
+
   if (!response) {
     return c.json({ error: "Signup failed" }, 400);
   }
-  
+
   // Don't create default project - user will do this in onboarding
-  
+
   return c.json(response);
 });
 
@@ -190,11 +190,11 @@ app.post("/auth/login", async (c) => {
       password: body.password,
     },
   });
-  
+
   if (!response) {
     return c.json({ error: "Invalid credentials" }, 401);
   }
-  
+
   return c.json(response);
 });
 
@@ -213,11 +213,11 @@ app.get("/auth/me", async (c) => {
   if (!cookie) {
     return c.json({ error: "Not authenticated" }, 401);
   }
-  
+
   const session = await auth.api.getSession({
     headers: { cookie },
   });
-  
+
   if (!session?.user) {
     return c.json({ error: "Invalid session" }, 401);
   }
@@ -229,7 +229,7 @@ app.get("/auth/me", async (c) => {
 app.post("/webhook/stripe", async (c) => {
   console.log("🔔 Webhook request received");
   console.log("📝 STRIPE_WEBHOOK_SECRET configured:", !!process.env.STRIPE_WEBHOOK_SECRET);
-  
+
   const body = await c.req.text();
   const signature = c.req.header("stripe-signature");
 
@@ -253,14 +253,14 @@ app.use("/api/*", authMiddleware);
 app.get("/api/overview", async (c) => {
   const userId = c.get("userId");
   const projectId = extractProjectId(c);
-  
+
   // Verify user owns this project
   const { verifyProjectOwnership } = await import("./auth");
   const hasAccess = await verifyProjectOwnership(userId, projectId);
   if (!hasAccess) {
     return c.json({ error: "Access denied" }, 403);
   }
-  
+
   const range = c.req.query("range") || "7d";
   const data = await getOverview(projectId, range);
   return c.json(data);
@@ -269,12 +269,12 @@ app.get("/api/overview", async (c) => {
 app.get("/api/pages", async (c) => {
   const userId = c.get("userId");
   const projectId = extractProjectId(c);
-  
+
   const { verifyProjectOwnership } = await import("./auth");
   if (!await verifyProjectOwnership(userId, projectId)) {
     return c.json({ error: "Access denied" }, 403);
   }
-  
+
   const range = c.req.query("range") || "7d";
   const data = await getPages(projectId, range);
   return c.json(data);
@@ -283,12 +283,12 @@ app.get("/api/pages", async (c) => {
 app.get("/api/referrers", async (c) => {
   const userId = c.get("userId");
   const projectId = extractProjectId(c);
-  
+
   const { verifyProjectOwnership } = await import("./auth");
   if (!await verifyProjectOwnership(userId, projectId)) {
     return c.json({ error: "Access denied" }, 403);
   }
-  
+
   const range = c.req.query("range") || "7d";
   const data = await getReferrers(projectId, range);
   return c.json(data);
@@ -297,12 +297,12 @@ app.get("/api/referrers", async (c) => {
 app.get("/api/countries", async (c) => {
   const userId = c.get("userId");
   const projectId = extractProjectId(c);
-  
+
   const { verifyProjectOwnership } = await import("./auth");
   if (!await verifyProjectOwnership(userId, projectId)) {
     return c.json({ error: "Access denied" }, 403);
   }
-  
+
   const range = c.req.query("range") || "7d";
   const data = await getCountries(projectId, range);
   return c.json(data);
@@ -311,12 +311,12 @@ app.get("/api/countries", async (c) => {
 app.get("/api/devices", async (c) => {
   const userId = c.get("userId");
   const projectId = extractProjectId(c);
-  
+
   const { verifyProjectOwnership } = await import("./auth");
   if (!await verifyProjectOwnership(userId, projectId)) {
     return c.json({ error: "Access denied" }, 403);
   }
-  
+
   const range = c.req.query("range") || "7d";
   const data = await getDevices(projectId, range);
   return c.json(data);
@@ -325,12 +325,12 @@ app.get("/api/devices", async (c) => {
 app.get("/api/events", async (c) => {
   const userId = c.get("userId");
   const projectId = extractProjectId(c);
-  
+
   const { verifyProjectOwnership } = await import("./auth");
   if (!await verifyProjectOwnership(userId, projectId)) {
     return c.json({ error: "Access denied" }, 403);
   }
-  
+
   const range = c.req.query("range") || "7d";
   const data = await getEvents(projectId, range);
   return c.json(data);
@@ -359,7 +359,7 @@ app.get("/api/projects", async (c) => {
 app.post("/api/projects", async (c) => {
   const userId = c.get("userId");
   const { name, domain } = await c.req.json();
-  
+
   await initializeUserSchema();
   if (!name || !domain) {
     return c.json({ error: "Missing required fields" }, 400);
@@ -372,9 +372,9 @@ app.post("/api/projects", async (c) => {
 app.get("/api/projects/:id", async (c) => {
   const userId = c.get("userId");
   const projectId = c.req.param("id");
-  
+
   const project = await getProjectById(projectId, userId);
-  
+
   if (!project) {
     return c.json({ error: "Project not found" }, 404);
   }
@@ -386,7 +386,7 @@ app.get("/api/projects/:id", async (c) => {
 app.post("/api/tokens", async (c) => {
   const userId = c.get("userId");
   const { name } = await c.req.json();
-  
+
   const token = await createAPIToken(userId, name || "CLI Token");
   return c.json({ token });
 });

@@ -22,7 +22,7 @@ function formatDateForClickHouse(date: Date): string {
 function getDateRange(range: string): { start: string; end: string } {
   const now = new Date();
   const end = formatDateForClickHouse(now);
-  
+
   let start: Date;
   switch (range) {
     case "today":
@@ -53,7 +53,7 @@ function getDateRange(range: string): { start: string; end: string } {
       defaultStart.setHours(0, 0, 0, 0);
       start = defaultStart;
   }
-  
+
   return { start: formatDateForClickHouse(start), end };
 }
 
@@ -127,7 +127,7 @@ export async function getOverview(
     stats: {
       visitors,
       pageviews,
-      bounceRate: 0.38, // Simplified for now
+      bounceRate: 0, // Real bounce rate calculation would go here
       avgDuration: 0,
     },
     series: series.map((s: any) => ({
@@ -295,7 +295,7 @@ export async function getDevices(
 
   const devices = await devicesResult.json();
   const browsers = await browsersResult.json();
-  
+
   const totalDevices = devices.reduce((sum: number, d: any) => sum + d.visitors, 0);
   const totalBrowsers = browsers.reduce((sum: number, b: any) => sum + b.visitors, 0);
 
