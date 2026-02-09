@@ -123,11 +123,16 @@ export async function getOverview(
   const avgDuration = Math.round(Number(firstRow.avgDuration || 0));
   const bounceRate = Math.round(Number(firstRow.bounceRate || 0));
 
-  // Determine grouping granularity based on range
-  const isShortRange = range === "today" || range === "yesterday";
-  const groupFunc = isShortRange ? "toStartOfHour(ts)" : "toDate(ts)";
+  // Determine granularity and generate zero-filled time series
+  const isHourly = range === "today" || range === "yesterday";
+  const isMonthly = range === "year";
+  const groupFunc = isHourly
+    ? "toStartOfHour(ts)"
+    : isMonthly
+      ? "toStartOfMonth(ts)"
+      : "toDate(ts)";
 
-  // Get time series
+  // Get time series from ClickHouse
   const seriesResult = await client.query({
     query: `
       SELECT
@@ -144,7 +149,74 @@ export async function getOverview(
     format: "JSONEachRow",
   });
 
-  const series = await seriesResult.json();
+  const rawSeries = await seriesResult.json();
+
+  // Build a lookup map from actual data
+  const dataMap = new Map<string, number>();
+  for (const point of rawSeries as any[]) {
+    const key = String(point.date);
+    dataMap.set(key, Number(point.value));
+  }
+
+  // Generate all expected time buckets and zero-fill
+  const allBuckets: { date: string; value: number }[] = [];
+  const startDate = new Date(start.replace(' ', 'T') + 'Z');
+  const endDate = new Date(end.replace(' ', 'T') + 'Z');
+
+  if (isHourly) {
+    // Generate all hours in the range
+    const cursor = new Date(startDate);
+    cursor.setMinutes(0, 0, 0);
+    while (cursor <= endDate) {
+      const isoKey = cursor.toISOString().replace('T', ' ').substring(0, 19);
+      const val = dataMap.get(isoKey) || 0;
+      // Also try matching without seconds
+      let matched = val;
+      if (!matched) {
+        for (const [k, v] of dataMap) {
+          if (k.startsWith(isoKey.substring(0, 13))) {
+            matched = v;
+            break;
+          }
+        }
+      }
+      allBuckets.push({ date: cursor.toISOString(), value: matched });
+      cursor.setHours(cursor.getHours() + 1);
+    }
+  } else if (isMonthly) {
+    // Generate all months in the range
+    const cursor = new Date(startDate);
+    cursor.setDate(1);
+    cursor.setHours(0, 0, 0, 0);
+    while (cursor <= endDate) {
+      const dateStr = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, '0')}-01`;
+      let matched = 0;
+      for (const [k, v] of dataMap) {
+        if (k.startsWith(dateStr)) {
+          matched = v;
+          break;
+        }
+      }
+      allBuckets.push({ date: cursor.toISOString(), value: matched });
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+  } else {
+    // Generate all days in the range
+    const cursor = new Date(startDate);
+    cursor.setHours(0, 0, 0, 0);
+    while (cursor <= endDate) {
+      const dateStr = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, '0')}-${String(cursor.getUTCDate()).padStart(2, '0')}`;
+      let matched = 0;
+      for (const [k, v] of dataMap) {
+        if (k.startsWith(dateStr)) {
+          matched = v;
+          break;
+        }
+      }
+      allBuckets.push({ date: cursor.toISOString(), value: matched });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
 
   // Get top pages
   const pagesResult = await client.query({
@@ -183,9 +255,9 @@ export async function getOverview(
       bounceRate,
       avgDuration,
     },
-    series: series.map((s: any) => ({
+    series: allBuckets.map((s: any) => ({
       date: s.date,
-      value: s.value,
+      value: Number(s.value),
     })),
     topPages: topPages.map((p: any) => ({
       path: p.path,

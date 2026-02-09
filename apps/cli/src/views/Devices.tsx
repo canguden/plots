@@ -1,4 +1,4 @@
-// Devices view - device and browser breakdown
+// Devices view - device, browser, and OS breakdown
 import { useEffect, useState } from "react";
 import type { DevicesResponse } from "@plots/ui";
 import { getDevices } from "../api";
@@ -40,14 +40,14 @@ export function Devices({ timeRange }: Props) {
       >
         <text fg="blue"><strong>Devices</strong></text>
         <box height={1} />
-        
+
         <box flexDirection="column" gap={1}>
           <box flexDirection="row">
             <text width={20}><strong>Device</strong></text>
             <text width={12}><strong>Visitors</strong></text>
             <text width={12}><strong>%</strong></text>
           </box>
-          
+
           {data.devices.map((device, i) => (
             <box key={i} flexDirection="row">
               <text width={20}>{device.device}</text>
@@ -67,14 +67,14 @@ export function Devices({ timeRange }: Props) {
       >
         <text fg="cyan"><strong>Browsers</strong></text>
         <box height={1} />
-        
+
         <box flexDirection="column" gap={1}>
           <box flexDirection="row">
             <text width={20}><strong>Browser</strong></text>
             <text width={12}><strong>Visitors</strong></text>
             <text width={12}><strong>%</strong></text>
           </box>
-          
+
           {data.browsers.map((browser, i) => (
             <box key={i} flexDirection="row">
               <text width={20}>{browser.browser}</text>
@@ -84,6 +84,35 @@ export function Devices({ timeRange }: Props) {
           ))}
         </box>
       </box>
+
+      {data.os && data.os.length > 0 && (
+        <box
+          borderStyle="single"
+          borderColor="magenta"
+          padding={1}
+          flexDirection="column"
+          flexGrow={1}
+        >
+          <text fg="magenta"><strong>Operating Systems</strong></text>
+          <box height={1} />
+
+          <box flexDirection="column" gap={1}>
+            <box flexDirection="row">
+              <text width={20}><strong>OS</strong></text>
+              <text width={12}><strong>Visitors</strong></text>
+              <text width={12}><strong>%</strong></text>
+            </box>
+
+            {data.os.map((os, i) => (
+              <box key={i} flexDirection="row">
+                <text width={20}>{os.os || "Unknown"}</text>
+                <text width={12}>{os.visitors}</text>
+                <text width={12}>{os.percentage.toFixed(1)}%</text>
+              </box>
+            ))}
+          </box>
+        </box>
+      )}
     </box>
   );
 }

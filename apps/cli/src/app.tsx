@@ -307,22 +307,27 @@ export function App() {
 
         {/* Stats Row */}
         <box flexDirection="row" padding={1} paddingTop={0} gap={2} width="100%" height={10}>
-          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+          <box width="20%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Visitors</span></text>
             <text><span fg="#c9d1d9"><strong>{(overview?.stats?.visitors || 0).toLocaleString()}</strong></span></text>
           </box>
 
-          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+          <box width="20%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+            <text><span fg="#8b949e">Sessions</span></text>
+            <text><span fg="#56d364"><strong>{((overview?.stats as any)?.sessions || 0).toLocaleString()}</strong></span></text>
+          </box>
+
+          <box width="20%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Pageviews</span></text>
             <text><span fg="#c9d1d9"><strong>{(overview?.stats?.pageviews || 0).toLocaleString()}</strong></span></text>
           </box>
 
-          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+          <box width="20%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Bounce Rate</span></text>
             <text><span fg="#f79c6a"><strong>{overview?.stats?.bounceRate || 0}%</strong></span></text>
           </box>
 
-          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+          <box width="20%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
             <text><span fg="#8b949e">Avg Duration</span></text>
             <text><span fg="#d2a8ff"><strong>{Math.floor((overview?.stats?.avgDuration || 0) / 60)}m {(overview?.stats?.avgDuration || 0) % 60}s</strong></span></text>
           </box>
@@ -370,22 +375,24 @@ export function App() {
         </box>
       </box>
 
-      {/* Project Switcher */}
+      {/* Project Switcher Modal */}
       {showProjectSwitcher && (
-        <box position="absolute" top="50%" left="50%" width={60} padding={1} flexDirection="column" backgroundColor="#09090b">
-          <box marginBottom={1}>
-            <text><span fg="#c9d1d9"><strong>Switch Project</strong></span></text>
-          </box>
-          {projects.map((proj, i) => (
-            <box key={proj.id} padding={1} backgroundColor={i === projectIndex ? "#0d419d" : "transparent"}>
-              <text>
-                <span fg={i === projectIndex ? "#ffffff" : "#c9d1d9"}>{proj.name}</span>
-                <span fg={i === projectIndex ? "#c9d1d9" : "#8b949e"}> {proj.domain}</span>
-              </text>
+        <box position="absolute" top={0} left={0} width="100%" height="100%" justifyContent="center" alignItems="center">
+          <box width={50} padding={1} flexDirection="column" backgroundColor="#111111" borderStyle="single" borderColor="#333">
+            <box marginBottom={1}>
+              <text><span fg="#c9d1d9"><strong> Switch Project</strong></span></text>
             </box>
-          ))}
-          <box marginTop={1}>
-            <text><span fg="#8b949e">↑↓ Navigate • Enter Select • Esc Cancel</span></text>
+            {projects.map((proj, i) => (
+              <box key={proj.id} padding={1} backgroundColor={i === projectIndex ? "#0d419d" : "transparent"}>
+                <text>
+                  <span fg={i === projectIndex ? "#ffffff" : "#c9d1d9"}>{proj.name}</span>
+                  <span fg={i === projectIndex ? "#c9d1d9" : "#8b949e"}> {proj.domain}</span>
+                </text>
+              </box>
+            ))}
+            <box marginTop={1}>
+              <text><span fg="#8b949e"> ↑↓ Navigate • Enter Select • Esc Cancel</span></text>
+            </box>
           </box>
         </box>
       )}
