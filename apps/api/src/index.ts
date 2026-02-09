@@ -429,17 +429,16 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 // Initialize
 const PORT = process.env.PORT || 3001;
 
+// Initialize and block server start until DB is ready
 console.log("🚀 Plots API starting...");
-
-// Ensure database schema exists
 try {
   await ensureSchema();
-  console.log("✅ Database schema initialized");
+  console.log("✅ Database and schema ready");
 } catch (error) {
-  console.error("❌ Failed to initialize database:", error);
+  console.error("❌ CRITICAL: Database initialization failed:", error);
+  // We still start the server but it might fail requests - better for debugging than a silent crash
 }
 
-// Start server
 const server = Bun.serve({
   port: PORT,
   fetch: app.fetch,
