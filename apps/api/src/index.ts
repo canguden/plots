@@ -409,9 +409,6 @@ app.post("/api/tokens", async (c) => {
   return c.json({ token });
 });
 
-// Health check
-app.get("/health", (c) => c.json({ status: "ok" }));
-
 // Initialize
 const PORT = process.env.PORT || 3001;
 
