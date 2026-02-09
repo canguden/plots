@@ -19,7 +19,8 @@ export async function authMiddleware(c: Context<{ Variables: Variables }>, next:
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
 
-    if (token.startsWith("pl_live_") || token.startsWith("pl_test_")) {
+    // Accept tokens with various prefixes (pl_live_, pl_test_, plots_)
+    if (token.startsWith("pl_live_") || token.startsWith("pl_test_") || token.startsWith("plots_")) {
       const userId = await validateAPIToken(token);
 
       if (userId) {
