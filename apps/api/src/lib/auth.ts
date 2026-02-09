@@ -35,9 +35,10 @@ export const auth = betterAuth({
   baseURL: process.env.API_URL || "http://localhost:3001",
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
+    crossSubDomainCookies: true,
     cookieOptions: {
       domain: process.env.NODE_ENV === "production" ? ".plots.sh" : undefined,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
     },
   },
 });

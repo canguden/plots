@@ -13,6 +13,13 @@ export interface AuthEnv {
 }
 
 export async function authMiddleware(c: Context<{ Variables: Variables }>, next: Next) {
+  // Bypassing auth check for auth endpoints themselves to avoid redirect loops
+  // and issues during login/signup processes.
+  if (c.req.path.startsWith("/api/auth/")) {
+    await next();
+    return;
+  }
+
   // Try API token first (Bearer token for CLI)
   const authHeader = c.req.header("Authorization");
 
