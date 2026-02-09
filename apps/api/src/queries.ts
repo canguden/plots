@@ -74,22 +74,20 @@ export async function getOverview(
   const statsResult = await client.query({
     query: `
       SELECT
-        count(DISTINCT visitor_id) as visitors,
-        count(DISTINCT session_id) as sessions,
+        count(DISTINCT session_id) as visitors,
         count(*) as pageviews,
         AVG(duration) as avgDuration,
         (countIf(session_events = 1) / count(DISTINCT session_id)) * 100 as bounceRate
       FROM (
         SELECT 
           session_id,
-          visitor_id,
           count(*) as session_events,
           dateDiff('second', MIN(ts), MAX(ts)) as duration
         FROM events
         WHERE project_id = {projectId: String}
           AND ts >= {start: DateTime}
           AND ts <= {end: DateTime}
-        GROUP BY session_id, visitor_id
+        GROUP BY session_id
       )
     `,
     query_params: { projectId, start, end },
@@ -109,7 +107,7 @@ export async function getOverview(
     query: `
       SELECT
         toDate(ts) as date,
-        count(DISTINCT visitor_id) as value
+        count(DISTINCT session_id) as value
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}
@@ -128,20 +126,19 @@ export async function getOverview(
     query: `
       SELECT
         path,
-        count(DISTINCT visitor_id) as visitors,
+        count(DISTINCT session_id) as visitors,
         count(*) as pageviews,
         (countIf(session_events = 1) / count(DISTINCT session_id)) * 100 as bounceRate
       FROM (
         SELECT 
           path,
           session_id,
-          visitor_id,
           count(*) as session_events
         FROM events
         WHERE project_id = {projectId: String}
           AND ts >= {start: DateTime}
           AND ts <= {end: DateTime}
-        GROUP BY path, session_id, visitor_id
+        GROUP BY path, session_id
       )
       GROUP BY path
       ORDER BY visitors DESC
@@ -184,20 +181,19 @@ export async function getPages(
     query: `
       SELECT
         path,
-        count(DISTINCT visitor_id) as visitors,
+        count(DISTINCT session_id) as visitors,
         count(*) as pageviews,
         (countIf(session_events = 1) / count(DISTINCT session_id)) * 100 as bounceRate
       FROM (
         SELECT 
           path,
           session_id,
-          visitor_id,
           count(*) as session_events
         FROM events
         WHERE project_id = {projectId: String}
           AND ts >= {start: DateTime}
           AND ts <= {end: DateTime}
-        GROUP BY path, session_id, visitor_id
+        GROUP BY path, session_id
       )
       GROUP BY path
       ORDER BY visitors DESC
@@ -230,7 +226,7 @@ export async function getReferrers(
     query: `
       SELECT
         referrer as domain,
-        count(DISTINCT visitor_id) as visitors,
+        count(DISTINCT session_id) as visitors,
         count(*) as pageviews
       FROM events
       WHERE project_id = {projectId: String}
@@ -267,7 +263,7 @@ export async function getCountries(
     query: `
       SELECT
         country,
-        count(DISTINCT visitor_id) as visitors
+        count(DISTINCT session_id) as visitors
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}
@@ -304,7 +300,7 @@ export async function getDevices(
     query: `
       SELECT
         device,
-        count(DISTINCT visitor_id) as visitors
+        count(DISTINCT session_id) as visitors
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}
@@ -320,7 +316,7 @@ export async function getDevices(
     query: `
       SELECT
         browser,
-        count(DISTINCT visitor_id) as visitors
+        count(DISTINCT session_id) as visitors
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}

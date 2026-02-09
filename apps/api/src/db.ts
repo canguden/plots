@@ -41,9 +41,7 @@ export function getPostgresClient() {
 export async function ensureSchema() {
   const client = getClickHouseClient();
 
-  // 1. ClickHouse Schema (using command for DDL)
-  console.log("🛠️ Ensuring ClickHouse schema...");
-  await client.command({
+  await client.exec({
     query: `
       CREATE TABLE IF NOT EXISTS events (
         project_id String,
@@ -54,34 +52,11 @@ export async function ensureSchema() {
         device LowCardinality(String),
         browser LowCardinality(String),
         event LowCardinality(String),
-        session_id String,
-        visitor_id String
+        session_id String
       )
       ENGINE = MergeTree
       PARTITION BY toYYYYMM(ts)
-      ORDER BY (project_id, ts, visitor_id, session_id)
+      ORDER BY (project_id, ts, session_id)
     `,
   });
-
-  // 2. Individual column migrations (failsafe)
-  const columns = ["session_id", "visitor_id"];
-  for (const col of columns) {
-    try {
-      console.log(`🛠️ Migrating ClickHouse column: ${col}...`);
-      await client.command({
-        query: `ALTER TABLE events ADD COLUMN IF NOT EXISTS ${col} String`,
-      });
-    } catch (e) {
-      console.warn(`⚠️ Migration info for ${col}:`, e instanceof Error ? e.message : e);
-    }
-  }
-
-  // 3. PostgreSQL Schema (Better Auth)
-  try {
-    console.log("🛠️ Ensuring PostgreSQL schema...");
-    const { initializeUserSchema } = await import("./schema");
-    await initializeUserSchema();
-  } catch (error) {
-    console.error("❌ PostgreSQL schema error:", error);
-  }
 }

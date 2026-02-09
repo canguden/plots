@@ -28,15 +28,7 @@ function LoginForm() {
     try {
       await login(email, password);
       const redirect = searchParams.get('redirect') || '/dashboard';
-      // Use window.location for a hard redirect to ensure fresh state if needed,
-      // or router.push for SPA feel. We'll try router.push first but with a fallback.
       router.push(redirect);
-      // Hard redirect as fallback if SPA navigation hangs
-      setTimeout(() => {
-        if (window.location.pathname === '/login') {
-          window.location.href = redirect;
-        }
-      }, 1000);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

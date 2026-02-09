@@ -108,16 +108,6 @@ app.get("/plots.js", async (c) => {
     return sid;
   }
 
-  // Visitor handling (long-term persistence)
-  function getVisitorId() {
-    let vid = localStorage.getItem('plots_vid');
-    if (!vid) {
-      vid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('plots_vid', vid);
-    }
-    return vid;
-  }
-
   // Send event
   function send(event, data = {}) {
     const payload = {
@@ -127,7 +117,6 @@ app.get("/plots.js", async (c) => {
       referrer: document.referrer || '',
       timestamp: new Date().toISOString(),
       session_id: getSessionId(),
-      visitor_id: getVisitorId(),
       ...data
     };
 
