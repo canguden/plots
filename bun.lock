@@ -30,7 +30,7 @@
       },
     },
     "apps/cli": {
-      "name": "plots-cli",
+      "name": "plots",
       "version": "0.1.3",
       "bin": {
         "plots": "./dist/index.js",
@@ -1186,7 +1186,7 @@
 
     "planck": ["planck@1.4.2", "", { "peerDependencies": { "stage-js": "^1.0.0-alpha.12" } }, "sha512-mNbhnV3g8X2rwGxzcesjmN8BDA6qfXgQxXVMkWau9MCRlQY0RLNEkyHlVp6yFy/X6qrzAXyNONCnZ1cGDLrNew=="],
 
-    "plots-cli": ["plots-cli@workspace:apps/cli"],
+    "plots": ["plots@workspace:apps/cli"],
 
     "plots-cli-test": ["plots-cli-test@workspace:apps/cli-test"],
 
