@@ -25,12 +25,18 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [
-    process.env.WEB_URL || "http://localhost:3000",
+    "http://localhost:3000",
+    "https://plots.sh",
+    "https://www.plots.sh",
+    ...(process.env.WEB_URL ? [process.env.WEB_URL] : []),
   ],
   secret: process.env.AUTH_SECRET || "this-is-a-secret-value-with-at-least-32-characters-for-development",
   baseURL: process.env.API_URL || "http://localhost:3001",
   advanced: {
-    disableCSRFCheck: process.env.NODE_ENV === "development",
+    useSecureCookies: process.env.NODE_ENV === "production",
+    crossSubDomainCookies: {
+      enabled: true,
+    },
   },
 });
 

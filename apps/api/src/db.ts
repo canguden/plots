@@ -5,15 +5,15 @@ let clickhouse: ClickHouseClient | null = null;
 
 export function getClickHouseClient(): ClickHouseClient {
   if (!clickhouse) {
-    const host = process.env.CLICKHOUSE_HOST;
+    const url = process.env.CLICKHOUSE_HOST;
     const password = process.env.CLICKHOUSE_PASSWORD;
     
-    if (!host || !password) {
+    if (!url || !password) {
       throw new Error("ClickHouse credentials not configured");
     }
 
     clickhouse = createClient({
-      host,
+      url,
       password,
     });
   }

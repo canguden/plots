@@ -36,9 +36,34 @@ const app = new Hono<{ Variables: Variables }>();
 // Middleware
 app.use("*", logger());
 app.use("*", cors({
-  origin: process.env.WEB_URL || "http://localhost:3000",
+  origin: (origin) => {
+    const allowed = [
+      "http://localhost:3000",
+      "https://plots.sh",
+      "https://www.plots.sh",
+    ];
+    // Allow all Vercel preview URLs
+    if (origin?.includes("vercel.app")) return origin;
+    // Allow configured WEB_URL
+    if (process.env.WEB_URL && origin === process.env.WEB_URL) return origin;
+    // Allow if in allowed list
+    return allowed.includes(origin || "") ? origin : allowed[0];
+  },
   credentials: true,
 }));
+
+// Health check
+app.get("/", (c) => {
+  return c.json({
+    service: "Plots Analytics API",
+    status: "healthy",
+    version: "1.0.0",
+  });
+});
+
+app.get("/health", (c) => {
+  return c.json({ status: "ok" });
+});
 
 // Public endpoints
 app.post("/ingest", ingestEvent);
