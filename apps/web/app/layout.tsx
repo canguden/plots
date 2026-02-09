@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Script
-          src="https://plots.sh/plots.js"
+          src="https://api.plots.sh/plots.js"
           data-project={process.env.NEXT_PUBLIC_PLOTS_PROJECT_ID}
           strategy="afterInteractive"
         />
