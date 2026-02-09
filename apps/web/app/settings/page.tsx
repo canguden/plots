@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
-import { ProtectedRoute } from '../../components/ProtectedRoute';
 
 interface Token {
   id: string;
@@ -26,7 +26,8 @@ interface Usage {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
@@ -38,6 +39,13 @@ export default function SettingsPage() {
   const [newProjectDomain, setNewProjectDomain] = useState('');
   const [addingProject, setAddingProject] = useState(false);
   const [copiedScript, setCopiedScript] = useState<string | null>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     loadTokens();
@@ -449,6 +457,5 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
-    </ProtectedRoute>
   );
 }

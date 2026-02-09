@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ProtectedRoute } from '../../components/ProtectedRoute';
+import { useAuth } from '../../lib/auth-context';
 
 export default function OnboardingPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [websiteName, setWebsiteName] = useState('');
   const [domain, setDomain] = useState('');
   const [error, setError] = useState('');
@@ -12,6 +14,13 @@ export default function OnboardingPage() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -53,9 +62,20 @@ export default function OnboardingPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Show loading while checking auth
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-[#666]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (projectId) {
     return (
-      <ProtectedRoute>
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
@@ -141,12 +161,10 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
-      </ProtectedRoute>
     );
   }
 
   return (
-    <ProtectedRoute>
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-full max-w-xl">
         <div className="text-center mb-8">
@@ -234,6 +252,5 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
-    </ProtectedRoute>
   );
 }
