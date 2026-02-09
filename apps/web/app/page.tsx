@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "../lib/auth-context";
-import { Navigation } from "../components/Navigation";
 
 function InstallBox() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -32,8 +31,8 @@ function InstallBox() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === tab
-                  ? 'text-white border-white'
-                  : 'text-[#666] border-transparent hover:text-white'
+                ? 'text-white border-white'
+                : 'text-[#666] border-transparent hover:text-white'
                 }`}
             >
               {tab.toUpperCase()}
@@ -85,7 +84,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      <Navigation />
       {/* Hero Section */}
       <div className="max-w-4xl mx-auto text-center  py-20">
         <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
