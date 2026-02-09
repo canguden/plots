@@ -3,13 +3,44 @@
 
 import { useState, useEffect } from "react";
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react";
-import { getOverview, getPages, getCountries } from "./api";
+import { getOverview, getPages, getCountries, getProjects, getReferrers, getDevices, Project } from "./api";
 
 type ViewType = "overview" | "pages" | "countries" | "tech";
-type DateRange = "24h" | "7d" | "30d" | "12m";
-type AppState = "project-select" | "dashboard" | "loading";
+type DateRange = "today" | "7d" | "30d";
+type AppState = "project-select" | "dashboard" | "loading" | "error";
+
+interface OverviewData {
+  uniqueVisitors: number;
+  totalPageviews: number;
+  bounceRate: number;
+  avgDuration: number;
+}
+
+interface PageData {
+  path: string;
+  views: number;
+  unique: number;
+}
+
+interface CountryData {
+  country: string;
+  visitors: number;
+  percentage: number;
+}
+
+interface ReferrerData {
+  referrer: string;
+  visitors: number;
+}
+
+interface DeviceData {
+  device: string;
+  visitors: number;
+  percentage: number;
+}
 
 function sparkline(data: number[]): string {
+  if (!data || data.length === 0) return "────────";
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
@@ -20,45 +51,94 @@ function sparkline(data: number[]): string {
 }
 
 export function App() {
-  const [appState, setAppState] = useState<AppState>("dashboard");
+  const [appState, setAppState] = useState<AppState>("loading");
   const [view, setView] = useState<ViewType>("overview");
-  const [range, setRange] = useState<DateRange>("7d");
-  const [data, setData] = useState<any>(null);
+  const [dateRange, setDateRange] = useState<DateRange>("7d");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [range, view]);
-
-  async function loadData() {
-    try {
-      setAppState("loading");
-      setError(null);
-      
-      let result;
-      if (view === "overview") {
-        result = await getOverview(range);
-      } else if (view === "pages") {
-        result = await getPages(range);
-      } else if (view === "countries") {
-        result = await getCountries(range);
-      }
-      
-      setData(result);
-      setAppState("dashboard");
-    } catch (err: any) {
-      setError(err.message || "Failed to load data");
-      setAppState("dashboard");
-    }
-  }
-  const [projectIndex, setProjectIndex] = useState(0);
+  // Data states
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(0);
+  const [projectIndex, setProjectIndex] = useState(0);
   const [showProjectSwitcher, setShowProjectSwitcher] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange>("7d");
+
+  const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [pages, setPages] = useState<PageData[]>([]);
+  const [countries, setCountries] = useState<CountryData[]>([]);
+  const [referrers, setReferrers] = useState<ReferrerData[]>([]);
+  const [devices, setDevices] = useState<DeviceData[]>([]);
+
   const renderer = useRenderer();
   const { height: terminalHeight } = useTerminalDimensions();
 
-  const project = mockProjects[selectedProjectIndex];
+  const project = projects[selectedProjectIndex];
+
+  // Load projects on mount
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  // Load data when project or date range changes
+  useEffect(() => {
+    if (project) {
+      loadData();
+    }
+  }, [selectedProjectIndex, dateRange, projects]);
+
+  async function loadProjects() {
+    try {
+      setAppState("loading");
+      setError(null);
+      const result = await getProjects();
+      const projectList = result.projects || result || [];
+      setProjects(Array.isArray(projectList) ? projectList : []);
+
+      if (projectList.length === 0) {
+        setError("No projects found. Create one at https://plots.sh/onboarding");
+        setAppState("error");
+      } else {
+        setAppState("dashboard");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load projects");
+      setAppState("error");
+    }
+  }
+
+  async function loadData() {
+    if (!project) return;
+
+    try {
+      const projectId = project.id;
+      const range = dateRange;
+
+      // Fetch all data in parallel
+      const [overviewRes, pagesRes, countriesRes, referrersRes, devicesRes] = await Promise.all([
+        getOverview(range, projectId).catch(() => null),
+        getPages(range, projectId).catch(() => []),
+        getCountries(range, projectId).catch(() => []),
+        getReferrers(range, projectId).catch(() => []),
+        getDevices(range, projectId).catch(() => []),
+      ]);
+
+      if (overviewRes) {
+        setOverview({
+          uniqueVisitors: overviewRes.uniqueVisitors || 0,
+          totalPageviews: overviewRes.totalPageviews || 0,
+          bounceRate: overviewRes.bounceRate || 0,
+          avgDuration: overviewRes.avgDuration || 0,
+        });
+      }
+
+      setPages(Array.isArray(pagesRes) ? pagesRes : (pagesRes?.pages || []));
+      setCountries(Array.isArray(countriesRes) ? countriesRes : (countriesRes?.countries || []));
+      setReferrers(Array.isArray(referrersRes) ? referrersRes : (referrersRes?.referrers || []));
+      setDevices(Array.isArray(devicesRes) ? devicesRes : (devicesRes?.devices || []));
+
+    } catch (err: any) {
+      console.error("Failed to load data:", err);
+    }
+  }
 
   useKeyboard((key) => {
     // Global quit
@@ -67,7 +147,7 @@ export function App() {
       return;
     }
 
-    // Project switcher (only in dashboard)
+    // Project switcher
     if (appState === "dashboard" && key.ctrl && key.name === "p") {
       setShowProjectSwitcher(!showProjectSwitcher);
       return;
@@ -79,7 +159,7 @@ export function App() {
       } else if (key.name === "up") {
         setProjectIndex((i: number) => Math.max(0, i - 1));
       } else if (key.name === "down") {
-        setProjectIndex((i: number) => Math.min(mockProjects.length - 1, i + 1));
+        setProjectIndex((i: number) => Math.min(projects.length - 1, i + 1));
       } else if (key.name === "return") {
         setSelectedProjectIndex(projectIndex);
         setShowProjectSwitcher(false);
@@ -95,28 +175,66 @@ export function App() {
       if (key.name === "4") setView("tech");
 
       // Date range shortcuts
-      if (key.name === "d") setDateRange("24h");
+      if (key.name === "d") setDateRange("today");
       if (key.name === "w") setDateRange("7d");
       if (key.name === "m") setDateRange("30d");
-      if (key.name === "y") setDateRange("12m");
 
       // Back to project selection
       if (key.name === "escape") {
         setAppState("project-select");
       }
+
+      // Refresh
+      if (key.name === "r") {
+        loadData();
+      }
+    }
+
+    // Project selection navigation
+    if (appState === "project-select") {
+      if (key.name === "up") {
+        setSelectedProjectIndex((i: number) => Math.max(0, i - 1));
+      } else if (key.name === "down") {
+        setSelectedProjectIndex((i: number) => Math.min(projects.length - 1, i + 1));
+      } else if (key.name === "return") {
+        setAppState("dashboard");
+      }
     }
   });
 
-  const pageviewsChart = mockChartData.map((d) => d.pageviews);
-  const visitorsChart = mockChartData.map((d) => d.visitors);
-
   const dateRangeLabel: Record<DateRange, string> = {
-    "24h": "Last 24 hours",
+    "today": "Today",
     "7d": "Last 7 days",
-    "30d": "Last 30 days",
-    "12m": "Last 12 months"
+    "30d": "Last 30 days"
   };
   const dateRangeLabelText = dateRangeLabel[dateRange];
+
+  // Loading Screen
+  if (appState === "loading") {
+    return (
+      <box flexDirection="column" width="100%" height="100%" backgroundColor="#000000" justifyContent="center" alignItems="center">
+        <box marginBottom={2}>
+          <ascii-font text="plots" font="tiny" color="#ffffff" />
+        </box>
+        <text><span fg="#8b949e">Loading...</span></text>
+      </box>
+    );
+  }
+
+  // Error Screen
+  if (appState === "error") {
+    return (
+      <box flexDirection="column" width="100%" height="100%" backgroundColor="#000000" justifyContent="center" alignItems="center">
+        <box marginBottom={2}>
+          <ascii-font text="plots" font="tiny" color="#ffffff" />
+        </box>
+        <text><span fg="#f85149">Error: {error}</span></text>
+        <box marginTop={2}>
+          <text><span fg="#8b949e">Press Q to quit</span></text>
+        </box>
+      </box>
+    );
+  }
 
   // Project Selection Screen
   if (appState === "project-select") {
@@ -125,28 +243,27 @@ export function App() {
         <box marginBottom={3}>
           <ascii-font text="plots" font="tiny" color="#ffffff" />
         </box>
-        
+
         <box width={60} backgroundColor="#09090b" padding={2}>
           <box marginBottom={2}>
             <text><span fg="#c9d1d9"><strong>Select a Project</strong></span></text>
           </box>
-          
-          <select
-            options={mockProjects.map(p => ({
-              name: p.name,
-              description: p.domain,
-              value: p
-            }))}
-            onSelect={(index) => {
-              setSelectedProjectIndex(index);
-              setProjectIndex(index);
-              setAppState("dashboard");
-            }}
-            selectedIndex={selectedProjectIndex}
-            height={Math.min(10, mockProjects.length)}
-            focused
-          />
-          
+
+          {projects.length === 0 ? (
+            <text><span fg="#8b949e">No projects found</span></text>
+          ) : (
+            <box flexDirection="column">
+              {projects.map((p, i) => (
+                <box key={p.id} padding={1} backgroundColor={i === selectedProjectIndex ? "#0d419d" : "transparent"}>
+                  <text>
+                    <span fg={i === selectedProjectIndex ? "#ffffff" : "#c9d1d9"}>{p.name}</span>
+                    <span fg={i === selectedProjectIndex ? "#c9d1d9" : "#8b949e"}> {p.domain}</span>
+                  </text>
+                </box>
+              ))}
+            </box>
+          )}
+
           <box marginTop={2} borderTop paddingTop={1}>
             <text><span fg="#8b949e">↑↓ Navigate • Enter Select • Q Quit</span></text>
           </box>
@@ -158,86 +275,67 @@ export function App() {
   // Dashboard View
   return (
     <box flexDirection="column" width="100%" backgroundColor="#000000">
-      {/* Header with ASCII Font Logo */}
+      {/* Header */}
       <box padding={1} backgroundColor="#000000">
         <box flexDirection="row" justifyContent="space-between" alignItems="center">
           <box>
             <ascii-font text="plots" font="tiny" color="#ffffff" />
           </box>
           <box flexDirection="column" alignItems="flex-end">
-            <text><span fg="#c9d1d9"><strong>{project.name}</strong></span></text>
-            <text><span fg="#8b949e">{project.domain}</span></text>
+            <text><span fg="#c9d1d9"><strong>{project?.name || "No Project"}</strong></span></text>
+            <text><span fg="#8b949e">{project?.domain || ""}</span></text>
           </box>
         </box>
       </box>
 
-      
       <scrollbox height={terminalHeight - 6} focused>
-      {/* Date Range */}
-      <box padding={1} paddingTop={0} paddingBottom={0} flexDirection="row" gap={2} backgroundColor="#000000">
-        <text><span fg="#8b949e">Range:</span></text>
-        {(["24h", "7d", "30d", "12m"] as DateRange[]).map((range) => (
-          <text key={range}>
-            <span fg={dateRange === range ? "#58a6ff" : "#6e7681"}>
-              {range === "24h" ? "[D]" : range === "7d" ? "[W]" : range === "30d" ? "[M]" : "[Y]"} {range}
-            </span>
-          </text>
-        ))}
-        <box flexGrow={1} />
-        <text><span fg="#56d364">●</span> <span fg="#8b949e">Live • {dateRangeLabelText}</span></text>
-      </box>
-
-      {/* Stats Row */}
-      <box flexDirection="row" padding={1} paddingTop={0} gap={2} width="100%" height={10}>
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
-          <text><span fg="#8b949e">Visitors</span></text>
-          <text><span fg="#c9d1d9"><strong>{mockStats.uniqueVisitors.toLocaleString()}</strong></span></text>
-          <text><span fg="#56d364">↑ 8.7%</span></text>
-        </box>
-
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
-          <text><span fg="#8b949e">Pageviews</span></text>
-          <text><span fg="#c9d1d9"><strong>{mockStats.totalPageviews.toLocaleString()}</strong></span></text>
-          <text><span fg="#56d364">↑ 12.3%</span></text>
-        </box>
-
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
-          <text><span fg="#8b949e">Bounce Rate</span></text>
-          <text><span fg="#f79c6a"><strong>{mockStats.bounceRate}%</strong></span></text>
-          <text><span fg="#56d364">↓ 2.1%</span></text>
-        </box>
-
-        <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
-          <text><span fg="#8b949e">Avg Duration</span></text>
-          <text><span fg="#d2a8ff"><strong>4m 12s</strong></span></text>
-          <text><span fg="#56d364">↑ 15s</span></text>
-        </box>
-      </box>
-
-      {/* Chart */}
-      <box padding={1} paddingLeft={2} paddingRight={2} flexDirection="column" backgroundColor="#09090b" marginLeft={1} marginRight={1} marginBottom={1} height={8}>
-        <text><span fg="#c9d1d9"><strong>Traffic Trend</strong></span></text>
-        <box flexGrow={1} justifyContent="center">
-          <text><span fg="#58a6ff">{sparkline(pageviewsChart)}{sparkline(pageviewsChart)}{sparkline(pageviewsChart)}{sparkline(pageviewsChart)}</span></text>
-        </box>
-        <box flexDirection="row" gap={4}>
-          <text><span fg="#8b949e">Peak:</span> <span fg="#c9d1d9">3,421</span></text>
-          <text><span fg="#8b949e">Avg:</span> <span fg="#c9d1d9">2,156</span></text>
+        {/* Date Range */}
+        <box padding={1} paddingTop={0} paddingBottom={0} flexDirection="row" gap={2} backgroundColor="#000000">
+          <text><span fg="#8b949e">Range:</span></text>
+          {(["today", "7d", "30d"] as DateRange[]).map((range) => (
+            <text key={range}>
+              <span fg={dateRange === range ? "#58a6ff" : "#6e7681"}>
+                {range === "today" ? "[D]" : range === "7d" ? "[W]" : "[M]"} {range}
+              </span>
+            </text>
+          ))}
           <box flexGrow={1} />
-          <text><span fg="#6e7681">Pageviews over {dateRangeLabelText.toLowerCase()}</span></text>
+          <text><span fg="#56d364">●</span> <span fg="#8b949e">{dateRangeLabelText} • [R] Refresh</span></text>
         </box>
-      </box>
 
-      {/* Main Content */}
-      <box flexGrow={1} padding={1} paddingTop={0}>
-        {view === "overview" && <OverviewView />}
-        {view === "pages" && <PagesView />}
-        {view === "countries" && <CountriesView />}
-        {view === "tech" && <TechView />}
-      </box>
+        {/* Stats Row */}
+        <box flexDirection="row" padding={1} paddingTop={0} gap={2} width="100%" height={10}>
+          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+            <text><span fg="#8b949e">Visitors</span></text>
+            <text><span fg="#c9d1d9"><strong>{(overview?.uniqueVisitors || 0).toLocaleString()}</strong></span></text>
+          </box>
+
+          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+            <text><span fg="#8b949e">Pageviews</span></text>
+            <text><span fg="#c9d1d9"><strong>{(overview?.totalPageviews || 0).toLocaleString()}</strong></span></text>
+          </box>
+
+          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+            <text><span fg="#8b949e">Bounce Rate</span></text>
+            <text><span fg="#f79c6a"><strong>{overview?.bounceRate || 0}%</strong></span></text>
+          </box>
+
+          <box width="25%" padding={1} flexDirection="column" gap={1} backgroundColor="#09090b">
+            <text><span fg="#8b949e">Avg Duration</span></text>
+            <text><span fg="#d2a8ff"><strong>{Math.floor((overview?.avgDuration || 0) / 60)}m {(overview?.avgDuration || 0) % 60}s</strong></span></text>
+          </box>
+        </box>
+
+        {/* Main Content */}
+        <box flexGrow={1} padding={1} paddingTop={0}>
+          {view === "overview" && <OverviewView pages={pages} countries={countries} referrers={referrers} />}
+          {view === "pages" && <PagesView pages={pages} />}
+          {view === "countries" && <CountriesView countries={countries} />}
+          {view === "tech" && <TechView devices={devices} />}
+        </box>
 
       </scrollbox>
-      
+
       {/* Footer */}
       <box padding={1} flexDirection="row" justifyContent="space-between" backgroundColor="#09090b">
         <box flexDirection="row" gap={3}>
@@ -276,8 +374,8 @@ export function App() {
           <box marginBottom={1}>
             <text><span fg="#c9d1d9"><strong>Switch Project</strong></span></text>
           </box>
-          {mockProjects.map((proj, i) => (
-            <box key={proj.domain} padding={1} backgroundColor={i === projectIndex ? "#0d419d" : "transparent"}>
+          {projects.map((proj, i) => (
+            <box key={proj.id} padding={1} backgroundColor={i === projectIndex ? "#0d419d" : "transparent"}>
               <text>
                 <span fg={i === projectIndex ? "#ffffff" : "#c9d1d9"}>{proj.name}</span>
                 <span fg={i === projectIndex ? "#c9d1d9" : "#8b949e"}> {proj.domain}</span>
@@ -293,10 +391,10 @@ export function App() {
   );
 }
 
-function OverviewView() {
+function OverviewView({ pages, countries, referrers }: { pages: PageData[], countries: CountryData[], referrers: ReferrerData[] }) {
   return (
     <box flexDirection="column" gap={1} width="100%">
-      {/* Top Row: Pages and Sources */}
+      {/* Top Row: Pages and Referrers */}
       <box flexDirection="row" gap={1} width="100%">
         {/* Top Pages */}
         <box width="50%" padding={1} flexDirection="column" backgroundColor="#09090b">
@@ -307,85 +405,27 @@ function OverviewView() {
             <box width={10}><text><span fg="#8b949e">Unique</span></text></box>
           </box>
           <box flexDirection="column">
-            {mockTopPages.map((page, i) => {
-              const maxLen = 18;
-              const truncated = page.path.length > maxLen ? page.path.substring(0, maxLen - 1) + "…" : page.path;
-              return (
-                <box key={page.path} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
-                  <box width={20}>
-                    <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
+            {pages.length === 0 ? (
+              <text><span fg="#6e7681">No data yet</span></text>
+            ) : (
+              pages.slice(0, 8).map((page, i) => {
+                const maxLen = 18;
+                const truncated = page.path.length > maxLen ? page.path.substring(0, maxLen - 1) + "…" : page.path;
+                return (
+                  <box key={page.path} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
+                    <box width={20}>
+                      <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
+                    </box>
+                    <box width={10}>
+                      <text><span fg="#58a6ff">{page.views.toLocaleString()}</span></text>
+                    </box>
+                    <box width={10}>
+                      <text><span fg="#79c0ff">{page.unique.toLocaleString()}</span></text>
+                    </box>
                   </box>
-                  <box width={10}>
-                    <text><span fg="#58a6ff">{page.views.toLocaleString()}</span></text>
-                  </box>
-                  <box width={10}>
-                    <text><span fg="#79c0ff">{page.unique.toLocaleString()}</span></text>
-                  </box>
-                </box>
-              );
-            })}
-          </box>
-        </box>
-
-        {/* Traffic Sources */}
-        <box width="50%" padding={1} flexDirection="column" backgroundColor="#09090b">
-          <text><span fg="#c9d1d9"><strong>Traffic Sources</strong></span></text>
-          <box flexDirection="row" marginTop={1}>
-            <box width={15}><text><span fg="#8b949e">Source</span></text></box>
-            <box width={10}><text><span fg="#8b949e">Visitors</span></text></box>
-          </box>
-          <box flexDirection="column" gap={1} marginTop={1}>
-              {[
-                { name: "Google", visitors: 4234, color: "#58a6ff" },
-                { name: "Direct", visitors: 3102, color: "#58a6ff" },
-                { name: "Twitter", visitors: 1876, color: "#58a6ff" },
-                { name: "GitHub", visitors: 945, color: "#58a6ff" },
-                { name: "Reddit", visitors: 623, color: "#58a6ff" },
-                { name: "Other", visitors: 456, color: "#58a6ff" },
-                { name: "LinkedIn", visitors: 234, color: "#58a6ff" },
-                { name: "Facebook", visitors: 123, color: "#58a6ff" }
-              ].map((source, i) => (
-                <box key={source.name} flexDirection="row">
-                  <box width={15}>
-                    <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{source.name}</span></text>
-                  </box>
-                  <box width={10}>
-                    <text><span fg={source.color}>{source.visitors.toLocaleString()}</span></text>
-                  </box>
-                </box>
-              ))}
-          </box>
-        </box>
-      </box>
-
-      {/* Bottom Row: Countries and Referrers */}
-      <box flexDirection="row" gap={1} width="100%">
-        {/* Countries */}
-        <box width="50%" padding={1} flexDirection="column" backgroundColor="#09090b">
-          <text><span fg="#c9d1d9"><strong>Top Countries</strong></span></text>
-          <box flexDirection="row" marginTop={1}>
-            <box width={18}><text><span fg="#8b949e">Country</span></text></box>
-            <box width={10}><text><span fg="#8b949e">Visitors</span></text></box>
-            <box width={8}><text><span fg="#8b949e">Share</span></text></box>
-          </box>
-          <box flexDirection="column">
-            {mockTopCountries.map((country, i) => {
-              const maxLen = 16;
-              const truncated = country.country.length > maxLen ? country.country.substring(0, maxLen - 1) + "…" : country.country;
-              return (
-                <box key={country.country} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
-                  <box width={18}>
-                    <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
-                  </box>
-                  <box width={10}>
-                    <text><span fg="#58a6ff">{country.visitors.toLocaleString()}</span></text>
-                  </box>
-                  <box width={8}>
-                    <text><span fg="#f79c6a">{country.percentage}%</span></text>
-                  </box>
-                </box>
-              );
-            })}
+                );
+              })
+            )}
           </box>
         </box>
 
@@ -397,19 +437,15 @@ function OverviewView() {
             <box width={10}><text><span fg="#8b949e">Visitors</span></text></box>
           </box>
           <box flexDirection="column" gap={1} marginTop={1}>
-              {[
-                { url: "news.ycombinator.com", visitors: 1523 },
-                { url: "reddit.com/r/webdev", visitors: 891 },
-                { url: "twitter.com", visitors: 734 },
-                { url: "dev.to", visitors: 456 },
-                { url: "github.com", visitors: 289 },
-                { url: "stackoverflow.com", visitors: 156 },
-                { url: "medium.com", visitors: 98 }
-              ].map((ref, i) => {
+            {referrers.length === 0 ? (
+              <text><span fg="#6e7681">No data yet</span></text>
+            ) : (
+              referrers.slice(0, 7).map((ref, i) => {
                 const maxLen = 22;
-                const truncated = ref.url.length > maxLen ? ref.url.substring(0, maxLen - 1) + "…" : ref.url;
+                const displayName = ref.referrer || "Direct";
+                const truncated = displayName.length > maxLen ? displayName.substring(0, maxLen - 1) + "…" : displayName;
                 return (
-                  <box key={ref.url} flexDirection="row">
+                  <box key={ref.referrer || "direct"} flexDirection="row">
                     <box width={24}>
                       <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                     </box>
@@ -418,7 +454,43 @@ function OverviewView() {
                     </box>
                   </box>
                 );
-              })}
+              })
+            )}
+          </box>
+        </box>
+      </box>
+
+      {/* Bottom Row: Countries */}
+      <box flexDirection="row" gap={1} width="100%">
+        <box width="100%" padding={1} flexDirection="column" backgroundColor="#09090b">
+          <text><span fg="#c9d1d9"><strong>Top Countries</strong></span></text>
+          <box flexDirection="row" marginTop={1}>
+            <box width={18}><text><span fg="#8b949e">Country</span></text></box>
+            <box width={10}><text><span fg="#8b949e">Visitors</span></text></box>
+            <box width={8}><text><span fg="#8b949e">Share</span></text></box>
+          </box>
+          <box flexDirection="column">
+            {countries.length === 0 ? (
+              <text><span fg="#6e7681">No data yet</span></text>
+            ) : (
+              countries.slice(0, 8).map((country, i) => {
+                const maxLen = 16;
+                const truncated = country.country.length > maxLen ? country.country.substring(0, maxLen - 1) + "…" : country.country;
+                return (
+                  <box key={country.country} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
+                    <box width={18}>
+                      <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
+                    </box>
+                    <box width={10}>
+                      <text><span fg="#58a6ff">{country.visitors.toLocaleString()}</span></text>
+                    </box>
+                    <box width={8}>
+                      <text><span fg="#f79c6a">{country.percentage}%</span></text>
+                    </box>
+                  </box>
+                );
+              })
+            )}
           </box>
         </box>
       </box>
@@ -426,10 +498,7 @@ function OverviewView() {
   );
 }
 
-function PagesView() {
-  const bounceRate = (n: number) => (Math.random() * 60 + 20).toFixed(1);
-  const avgTime = (n: number) => Math.floor(Math.random() * 180 + 60);
-  
+function PagesView({ pages }: { pages: PageData[] }) {
   return (
     <box padding={1} flexDirection="column" backgroundColor="#09090b">
       <text><span fg="#c9d1d9"><strong>All Pages</strong></span></text>
@@ -437,39 +506,35 @@ function PagesView() {
         <box width={30}><text><span fg="#8b949e">Path</span></text></box>
         <box width={10}><text><span fg="#8b949e">Views</span></text></box>
         <box width={10}><text><span fg="#8b949e">Unique</span></text></box>
-        <box width={10}><text><span fg="#8b949e">Bounce</span></text></box>
-        <box width={10}><text><span fg="#8b949e">Avg Time</span></text></box>
       </box>
       <box flexDirection="column">
-        {mockTopPages.map((page, i) => {
-          const maxLen = 28;
-          const truncated = page.path.length > maxLen ? page.path.substring(0, maxLen - 1) + "…" : page.path;
-          return (
-            <box key={page.path} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
-              <box width={30}>
-                <text><span fg={i < 3 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
+        {pages.length === 0 ? (
+          <text><span fg="#6e7681">No data yet</span></text>
+        ) : (
+          pages.map((page, i) => {
+            const maxLen = 28;
+            const truncated = page.path.length > maxLen ? page.path.substring(0, maxLen - 1) + "…" : page.path;
+            return (
+              <box key={page.path} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
+                <box width={30}>
+                  <text><span fg={i < 3 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
+                </box>
+                <box width={10}>
+                  <text><span fg="#58a6ff">{page.views.toLocaleString()}</span></text>
+                </box>
+                <box width={10}>
+                  <text><span fg="#79c0ff">{page.unique.toLocaleString()}</span></text>
+                </box>
               </box>
-              <box width={10}>
-                <text><span fg="#58a6ff">{page.views.toLocaleString()}</span></text>
-              </box>
-              <box width={10}>
-                <text><span fg="#79c0ff">{page.unique.toLocaleString()}</span></text>
-              </box>
-              <box width={10}>
-                <text><span fg="#f79c6a">{bounceRate(i)}%</span></text>
-              </box>
-              <box width={10}>
-                <text><span fg="#d2a8ff">{avgTime(i)}s</span></text>
-              </box>
-            </box>
-          );
-        })}
+            );
+          })
+        )}
       </box>
     </box>
   );
 }
 
-function CountriesView() {
+function CountriesView({ countries }: { countries: CountryData[] }) {
   return (
     <box padding={1} flexDirection="column" backgroundColor="#09090b">
       <text><span fg="#c9d1d9"><strong>All Countries</strong></span></text>
@@ -477,128 +542,63 @@ function CountriesView() {
         <box width={20}><text><span fg="#8b949e">Country</span></text></box>
         <box width={12}><text><span fg="#8b949e">Visitors</span></text></box>
         <box width={10}><text><span fg="#8b949e">Share</span></text></box>
-        <box width={12}><text><span fg="#8b949e">Pageviews</span></text></box>
       </box>
       <box flexDirection="column">
-        {mockTopCountries.map((country, i) => {
-          const maxLen = 18;
-          const truncated = country.country.length > maxLen ? country.country.substring(0, maxLen - 1) + "…" : country.country;
-          return (
-            <box key={country.country} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
-              <box width={20}>
-                <text><span fg={i < 3 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
+        {countries.length === 0 ? (
+          <text><span fg="#6e7681">No data yet</span></text>
+        ) : (
+          countries.map((country, i) => {
+            const maxLen = 18;
+            const truncated = country.country.length > maxLen ? country.country.substring(0, maxLen - 1) + "…" : country.country;
+            return (
+              <box key={country.country} flexDirection="row" marginTop={i === 0 ? 0 : 1}>
+                <box width={20}>
+                  <text><span fg={i < 3 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
+                </box>
+                <box width={12}>
+                  <text><span fg="#58a6ff">{country.visitors.toLocaleString()}</span></text>
+                </box>
+                <box width={10}>
+                  <text><span fg="#f79c6a">{country.percentage}%</span></text>
+                </box>
               </box>
-              <box width={12}>
-                <text><span fg="#58a6ff">{country.visitors.toLocaleString()}</span></text>
-              </box>
-              <box width={10}>
-                <text><span fg="#f79c6a">{country.percentage}%</span></text>
-              </box>
-              <box width={12}>
-                <text><span fg="#79c0ff">{Math.floor(country.visitors * 1.8).toLocaleString()}</span></text>
-              </box>
-            </box>
-          );
-        })}
+            );
+          })
+        )}
       </box>
     </box>
   );
 }
 
-function TechView() {
-  const browsers = [
-    { name: "Chrome", visitors: 3245, percentage: 54 },
-    { name: "Firefox", visitors: 1456, percentage: 24 },
-    { name: "Safari", visitors: 892, percentage: 15 },
-    { name: "Edge", visitors: 267, percentage: 4 },
-    { name: "Other", visitors: 180, percentage: 3 }
-  ];
-
-  const os = [
-    { name: "Windows", visitors: 2890, percentage: 48 },
-    { name: "macOS", visitors: 1734, percentage: 29 },
-    { name: "Linux", visitors: 901, percentage: 15 },
-    { name: "Android", visitors: 361, percentage: 6 },
-    { name: "iOS", visitors: 154, percentage: 2 }
-  ];
-
-  const devices = [
-    { name: "Desktop", visitors: 4245, percentage: 71 },
-    { name: "Mobile", visitors: 1456, percentage: 24 },
-    { name: "Tablet", visitors: 339, percentage: 5 }
-  ];
-
+function TechView({ devices }: { devices: DeviceData[] }) {
   return (
     <box flexDirection="row" gap={1} width="100%">
-      {/* Browsers */}
-      <box width="33%" padding={1} flexDirection="column" backgroundColor="#09090b">
-        <text marginTop={1}><span fg="#c9d1d9"><strong>Browsers</strong></span></text>
-        <box flexDirection="row" marginTop={1}>
-          <box width={15}><text><span fg="#8b949e">Browser</span></text></box>
-          <box width={10}><text><span fg="#8b949e">Visitors</span></text></box>
-          <box flexGrow={1}><text><span fg="#8b949e">Share</span></text></box>
-        </box>
-        {browsers.map((browser, i) => (
-          <box key={browser.name} flexDirection="row" marginTop={1}>
-            <box width={15}>
-              <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{browser.name}</span></text>
-            </box>
-            <box width={10}>
-              <text><span fg="#58a6ff">{browser.visitors.toLocaleString()}</span></text>
-            </box>
-            <box flexGrow={1}>
-              <text><span fg="#f79c6a">{browser.percentage}%</span></text>
-            </box>
-          </box>
-        ))}
-      </box>
-
-      {/* Operating Systems */}
-      <box width="33%" padding={1} flexDirection="column" backgroundColor="#09090b">
-        <text marginTop={1}><span fg="#c9d1d9"><strong>Operating Systems</strong></span></text>
-        <box flexDirection="row" marginTop={1}>
-          <box width={15}><text><span fg="#8b949e">OS</span></text></box>
-          <box width={10}><text><span fg="#8b949e">Visitors</span></text></box>
-          <box flexGrow={1}><text><span fg="#8b949e">Share</span></text></box>
-        </box>
-        {os.map((system, i) => (
-          <box key={system.name} flexDirection="row" marginTop={1}>
-            <box width={15}>
-              <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{system.name}</span></text>
-            </box>
-            <box width={10}>
-              <text><span fg="#58a6ff">{system.visitors.toLocaleString()}</span></text>
-            </box>
-            <box flexGrow={1}>
-              <text><span fg="#f79c6a">{system.percentage}%</span></text>
-            </box>
-          </box>
-        ))}
-      </box>
-
       {/* Devices */}
-      <box width="34%" padding={1} flexDirection="column" backgroundColor="#09090b">
+      <box width="100%" padding={1} flexDirection="column" backgroundColor="#09090b">
         <text marginTop={1}><span fg="#c9d1d9"><strong>Devices</strong></span></text>
         <box flexDirection="row" marginTop={1}>
           <box width={15}><text><span fg="#8b949e">Device</span></text></box>
           <box width={10}><text><span fg="#8b949e">Visitors</span></text></box>
           <box flexGrow={1}><text><span fg="#8b949e">Share</span></text></box>
         </box>
-        {devices.map((device, i) => (
-          <box key={device.name} flexDirection="row" marginTop={1}>
-            <box width={15}>
-              <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{device.name}</span></text>
+        {devices.length === 0 ? (
+          <text><span fg="#6e7681">No data yet</span></text>
+        ) : (
+          devices.map((device, i) => (
+            <box key={device.device} flexDirection="row" marginTop={1}>
+              <box width={15}>
+                <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{device.device}</span></text>
+              </box>
+              <box width={10}>
+                <text><span fg="#58a6ff">{device.visitors.toLocaleString()}</span></text>
+              </box>
+              <box flexGrow={1}>
+                <text><span fg="#f79c6a">{device.percentage}%</span></text>
+              </box>
             </box>
-            <box width={10}>
-              <text><span fg="#58a6ff">{device.visitors.toLocaleString()}</span></text>
-            </box>
-            <box flexGrow={1}>
-              <text><span fg="#f79c6a">{device.percentage}%</span></text>
-            </box>
-          </box>
-        ))}
+          ))
+        )}
       </box>
     </box>
   );
 }
-
