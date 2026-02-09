@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { ProtectedRoute } from '../../components/ProtectedRoute';
 
 export default function OnboardingPage() {
   const [websiteName, setWebsiteName] = useState('');
@@ -54,6 +55,7 @@ export default function OnboardingPage() {
 
   if (projectId) {
     return (
+      <ProtectedRoute>
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
@@ -139,10 +141,12 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
+      </ProtectedRoute>
     );
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-full max-w-xl">
         <div className="text-center mb-8">
@@ -230,5 +234,6 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

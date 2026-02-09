@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/auth-context';
+import { ProtectedRoute } from '../../components/ProtectedRoute';
 
 interface Token {
   id: string;
@@ -180,11 +181,12 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-white mb-2">Settings</h1>
-        <p className="text-sm text-[#666]">Manage your account and projects</p>
-      </div>
+    <ProtectedRoute>
+      <div className="max-w-3xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-white mb-2">Settings</h1>
+          <p className="text-sm text-[#666]">Manage your account and projects</p>
+        </div>
 
       {/* Account Section */}
       <div className="border border-[#222] bg-[#111] rounded-lg">
@@ -447,5 +449,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
