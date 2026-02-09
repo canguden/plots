@@ -1,6 +1,6 @@
 {
   "name": "plots",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Terminal dashboard for Plots - Privacy-first web analytics",
   "author": "Imagininn <hello@imagininn.com>",
   "homepage": "https://plots.sh",
@@ -42,11 +42,6 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "@opentui/core": "^0.1.77",
-    "@opentui/react": "^0.1.77",
-    "@plots/config": "workspace:*",
-    "@plots/ui": "workspace:*",
-    "open": "^11.0.0",
-    "react": "^19.2.4"
+    "open": "^11.0.0"
   }
 }
