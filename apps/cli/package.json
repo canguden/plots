@@ -44,8 +44,9 @@
   "dependencies": {
     "@opentui/core": "^0.1.77",
     "@opentui/react": "^0.1.77",
-    "react": "^19.2.4",
+    "@plots/config": "workspace:*",
     "@plots/ui": "workspace:*",
-    "@plots/config": "workspace:*"
+    "open": "^11.0.0",
+    "react": "^19.2.4"
   }
 }

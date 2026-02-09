@@ -23,6 +23,7 @@ import {
   getProjectById,
   getUserById,
 } from "./users";
+import { cliAuth } from "./cli-auth";
 
 // Define Hono context types
 type Variables = {
@@ -41,6 +42,9 @@ app.use("*", cors({
 
 // Public endpoints
 app.post("/ingest", ingestEvent);
+
+// CLI OAuth device flow
+app.route("/cli", cliAuth);
 
 // Serve tracking script
 app.get("/plots.js", async (c) => {
