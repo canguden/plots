@@ -24,25 +24,18 @@ export const auth = betterAuth({
   session: {
     expiresIn: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // Update session every 24 hours
-    cookieCache: {
-      enabled: false, // Disable cache for better cross-subdomain reliability
-    },
   },
   trustedOrigins: [
     "http://localhost:3000",
     "https://plots.sh",
     "https://www.plots.sh",
+    "https://api.plots.sh",
     ...(process.env.WEB_URL ? [process.env.WEB_URL] : []),
   ],
   secret: process.env.AUTH_SECRET || "this-is-a-secret-value-with-at-least-32-characters-for-development",
   baseURL,
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
-    cookieOptions: {
-      domain: process.env.NODE_ENV === "production" ? ".plots.sh" : undefined,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    },
   },
 });
 
