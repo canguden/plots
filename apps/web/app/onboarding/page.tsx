@@ -55,7 +55,7 @@ export default function OnboardingPage() {
   };
 
   const copyScript = () => {
-    const script = `<script defer src="https://plots.sh/plots.js" data-project="${projectId}"></script>`;
+    const script = `<script defer src="https://api.plots.sh/plots.js" data-project="${projectId}"></script>`;
     navigator.clipboard.writeText(script);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -100,12 +100,12 @@ export default function OnboardingPage() {
               <p className="text-sm text-[#999] mb-4">
                 Add this script before the closing <code className="text-white bg-black px-1 py-0.5 rounded">&lt;/head&gt;</code> tag of your website:
               </p>
-              
+
               <div className="bg-black border border-[#222] rounded-lg p-4 relative group">
                 <pre className="text-sm text-white overflow-x-auto">
-{`<script
+                  {`<script
   defer
-  src="https://plots.sh/plots.js"
+  src="https://api.plots.sh/plots.js"
   data-project="${projectId}"
 ></script>`}
                 </pre>
@@ -168,7 +168,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-xl">
         <div className="text-center mb-8">
           <pre className="text-sm leading-none text-white inline-block">
-{`█▀█ █   █▀█ ▀█▀ █▀
+            {`█▀█ █   █▀█ ▀█▀ █▀
 █▀▀ █▄▄ █▄█  █  ▄█`}
           </pre>
           <h1 className="text-2xl font-semibold text-white mt-6 mb-2">
@@ -227,9 +227,9 @@ export default function OnboardingPage() {
               After setup, add this script to your website:
             </div>
             <pre className="text-xs text-white overflow-x-auto">
-{`<script
+              {`<script
   defer
-  src="https://plots.sh/plots.js"
+  src="https://api.plots.sh/plots.js"
   data-project="[YOUR-PROJECT-ID]"
 ></script>`}
             </pre>

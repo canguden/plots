@@ -101,7 +101,7 @@ export default function SettingsPage() {
   };
 
   const copyScript = (projectId: string) => {
-    const script = `<script defer src="https://plots.sh/plots.js" data-project="${projectId}"></script>`;
+    const script = `<script defer src="https://api.plots.sh/plots.js" data-project="${projectId}"></script>`;
     navigator.clipboard.writeText(script);
     setCopiedScript(projectId);
     setTimeout(() => setCopiedScript(null), 2000);
@@ -314,16 +314,16 @@ export default function SettingsPage() {
                       {new Date(project.created_at).toLocaleDateString()}
                     </div>
                   </div>
-                  
+
                   <details className="text-sm">
                     <summary className="text-[#666] hover:text-white cursor-pointer mb-2">
                       Show tracking script
                     </summary>
                     <div className="bg-black border border-[#222] rounded p-3 relative group mt-2">
                       <pre className="text-xs text-white overflow-x-auto pr-16">
-{`<script
+                        {`<script
   defer
-  src="https://plots.sh/plots.js"
+  src="https://api.plots.sh/plots.js"
   data-project="${project.id}"
 ></script>`}
                       </pre>
@@ -381,7 +381,7 @@ export default function SettingsPage() {
           >
             {generating ? 'Generating...' : 'Generate New Token'}
           </button>
-          
+
           <div className="mt-6 space-y-2">
             <div className="text-xs text-[#666] uppercase tracking-wider mb-2">
               Active Tokens
@@ -427,9 +427,9 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-sm font-medium text-white">
-                {usage && usage.limit === 1000 ? 'Free Plan' : 
-                 usage && usage.limit === 10000 ? 'Starter Plan' : 
-                 'Pro Plan'}
+                {usage && usage.limit === 1000 ? 'Free Plan' :
+                  usage && usage.limit === 10000 ? 'Starter Plan' :
+                    'Pro Plan'}
               </div>
               <div className="text-xs text-[#666] mt-1">
                 {usage ? `${usage.limit.toLocaleString()} events per month` : 'Loading...'}
@@ -451,9 +451,9 @@ export default function SettingsPage() {
                 <span>{usage.percentage}% of limit</span>
               </div>
               <div className="w-full bg-[#1a1a1a] rounded-full h-2">
-                <div 
-                  className="bg-white h-2 rounded-full" 
-                  style={{ width: `${Math.min(usage.percentage, 100)}%` }} 
+                <div
+                  className="bg-white h-2 rounded-full"
+                  style={{ width: `${Math.min(usage.percentage, 100)}%` }}
                 />
               </div>
               <div className="text-xs text-[#666] mt-2">

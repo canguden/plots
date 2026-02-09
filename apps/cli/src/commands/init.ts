@@ -47,7 +47,7 @@ export async function initCommand() {
     console.log("─".repeat(60));
     console.log(`<script
   defer
-  src="https://plots.sh/plots.js"
+  src="https://api.plots.sh/plots.js"
   data-project="${project.id}"
 ></script>`);
     console.log("─".repeat(60));
@@ -65,11 +65,11 @@ export async function initCommand() {
 window.plots.track("purchase", { value: 29 });`);
     console.log("─".repeat(60));
     console.log("\n✓ Setup complete! Your analytics will appear in the dashboard.\n");
-    
+
     if (projects.length > 1) {
       console.log(`💡 Tip: You have ${projects.length} projects. View all at https://plots.sh/dashboard\n`);
     }
-    
+
     process.exit(0);
   } catch (error: any) {
     console.error("\n❌ Error:", error.message);

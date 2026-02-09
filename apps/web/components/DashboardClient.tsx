@@ -207,7 +207,7 @@ export function DashboardClient({ initialData, initialRange }: Props) {
                   <pre className="text-xs text-white overflow-x-auto">
                     {`<script
   defer
-  src="https://plots.sh/plots.js"
+  src="https://api.plots.sh/plots.js"
   data-project="${selectedProject}"
 ></script>`}
                   </pre>
