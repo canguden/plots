@@ -2,7 +2,7 @@
 
 > Terminal dashboard for [Plots](https://plots.sh) - Privacy-first web analytics
 
-[![npm version](https://img.shields.io/npm/v/@imagininn/plots.svg)](https://www.npmjs.com/package/@imagininn/plots)
+[![npm version](https://img.shields.io/npm/v/plots-cli.svg)](https://www.npmjs.com/package/plots-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 View your website analytics directly from your terminal with real-time insights, beautiful charts, and lightning-fast performance.
@@ -27,22 +27,22 @@ Install globally using your preferred package manager:
 
 ### npm
 \`\`\`bash
-npm install -g @imagininn/plots
+npm install -g plots-cli
 \`\`\`
 
 ### pnpm
 \`\`\`bash
-pnpm add -g @imagininn/plots
+pnpm add -g plots-cli
 \`\`\`
 
 ### Yarn
 \`\`\`bash
-yarn global add @imagininn/plots
+yarn global add plots-cli
 \`\`\`
 
 ### Bun
 \`\`\`bash
-bun install -g @imagininn/plots
+bun install -g plots-cli
 \`\`\`
 
 ## 🚀 Usage

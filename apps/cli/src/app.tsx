@@ -1,19 +1,13 @@
 // @ts-nocheck
 /// <reference path="./opentui-react.d.ts" />
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react";
-import { 
-  mockStats, 
-  mockTopPages, 
-  mockTopCountries, 
-  mockProjects, 
-  mockChartData 
-} from "./mock-data";
+import { getOverview, getPages, getCountries } from "./api";
 
 type ViewType = "overview" | "pages" | "countries" | "tech";
 type DateRange = "24h" | "7d" | "30d" | "12m";
-type AppState = "project-select" | "dashboard";
+type AppState = "project-select" | "dashboard" | "loading";
 
 function sparkline(data: number[]): string {
   const min = Math.min(...data);
@@ -26,8 +20,37 @@ function sparkline(data: number[]): string {
 }
 
 export function App() {
-  const [appState, setAppState] = useState<AppState>("project-select");
+  const [appState, setAppState] = useState<AppState>("dashboard");
   const [view, setView] = useState<ViewType>("overview");
+  const [range, setRange] = useState<DateRange>("7d");
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, [range, view]);
+
+  async function loadData() {
+    try {
+      setAppState("loading");
+      setError(null);
+      
+      let result;
+      if (view === "overview") {
+        result = await getOverview(range);
+      } else if (view === "pages") {
+        result = await getPages(range);
+      } else if (view === "countries") {
+        result = await getCountries(range);
+      }
+      
+      setData(result);
+      setAppState("dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to load data");
+      setAppState("dashboard");
+    }
+  }
   const [projectIndex, setProjectIndex] = useState(0);
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(0);
   const [showProjectSwitcher, setShowProjectSwitcher] = useState(false);
