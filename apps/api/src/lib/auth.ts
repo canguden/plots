@@ -9,6 +9,9 @@ import * as schema from "../db-schema";
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client, { schema });
 
+const baseURL = process.env.API_URL || (process.env.NODE_ENV === "production" ? "https://api.plots.sh" : "http://localhost:3001");
+console.log(`[BetterAuth] Initializing with baseURL: ${baseURL}`);
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -32,7 +35,7 @@ export const auth = betterAuth({
     ...(process.env.WEB_URL ? [process.env.WEB_URL] : []),
   ],
   secret: process.env.AUTH_SECRET || "this-is-a-secret-value-with-at-least-32-characters-for-development",
-  baseURL: process.env.API_URL || "http://localhost:3001",
+  baseURL,
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     cookieOptions: {
