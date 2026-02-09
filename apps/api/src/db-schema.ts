@@ -7,6 +7,9 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull().default(false),
   image: text("image"),
+  stripeCustomerId: text("stripeCustomerId"),
+  subscriptionTier: text("subscriptionTier").default("free"),
+  subscriptionStatus: text("subscriptionStatus").default("inactive"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });

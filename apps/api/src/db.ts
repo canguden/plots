@@ -62,7 +62,7 @@ export async function ensureSchema() {
     `,
   });
 
-  // Add os column if table already exists without it
+  // Add ClickHouse columns if table already exists without them
   try {
     await client.exec({
       query: `ALTER TABLE events ADD COLUMN IF NOT EXISTS os LowCardinality(String) DEFAULT ''`,
@@ -70,6 +70,16 @@ export async function ensureSchema() {
     await client.exec({
       query: `ALTER TABLE events ADD COLUMN IF NOT EXISTS visitor_id String DEFAULT ''`,
     });
+  } catch (e) {
+    // Columns might already exist, ignore
+  }
+
+  // Add Stripe billing columns to Postgres user table
+  const { client: pg } = getPostgresClient();
+  try {
+    await pg`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "stripeCustomerId" TEXT`;
+    await pg`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "subscriptionTier" TEXT DEFAULT 'free'`;
+    await pg`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "subscriptionStatus" TEXT DEFAULT 'inactive'`;
   } catch (e) {
     // Columns might already exist, ignore
   }

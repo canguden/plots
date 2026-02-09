@@ -24,7 +24,7 @@ import {
   getDevices,
   getEvents,
 } from "./queries";
-import { getUsage, createCheckoutSession, handleWebhook } from "./billing";
+import { getUsage, createCheckoutSession, createPortalSession, handleWebhook, TIER_CONFIG } from "./billing";
 import {
   createAPIToken,
   getUserProjects,
@@ -384,6 +384,34 @@ app.post("/api/checkout", async (c) => {
   const { tier } = await c.req.json();
   const session = await createCheckoutSession(userId, tier);
   return c.json({ url: session.url });
+});
+
+app.post("/api/portal", async (c) => {
+  const userId = c.get("userId");
+  try {
+    const session = await createPortalSession(userId);
+    return c.json({ url: session.url });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 400);
+  }
+});
+
+app.get("/api/subscription", async (c) => {
+  const userId = c.get("userId");
+  const user = await getUserById(userId);
+  if (!user) {
+    return c.json({ error: "User not found" }, 404);
+  }
+
+  const tier = user.subscription_tier || 'free';
+  const config = TIER_CONFIG[tier] || TIER_CONFIG.free;
+
+  return c.json({
+    tier,
+    status: user.subscription_status || 'inactive',
+    limits: config,
+    hasStripeCustomer: !!user.stripe_customer_id,
+  });
 });
 
 // Project management

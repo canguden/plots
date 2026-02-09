@@ -51,11 +51,11 @@ function generateId(prefix: string): string {
 
 export async function getUserById(userId: string): Promise<User | null> {
   const { db } = getPostgresClient();
-  
+
   const result = await db.select().from(user).where(eq(user.id, userId)).limit(1);
-  
+
   if (result.length === 0) return null;
-  
+
   const u = result[0];
   return {
     id: u.id,
@@ -63,6 +63,9 @@ export async function getUserById(userId: string): Promise<User | null> {
     name: u.name,
     email_verified: u.emailVerified,
     image: u.image || undefined,
+    stripe_customer_id: u.stripeCustomerId || undefined,
+    subscription_tier: u.subscriptionTier || 'free',
+    subscription_status: u.subscriptionStatus || 'inactive',
     created_at: u.createdAt.toISOString(),
     updated_at: u.updatedAt.toISOString(),
   };
@@ -72,10 +75,10 @@ export async function getUserById(userId: string): Promise<User | null> {
 
 export async function createAPIToken(userId: string, name: string): Promise<string> {
   const { db } = getPostgresClient();
-  
+
   const token = generateId("plots");
   const id = generateId("tok");
-  
+
   await db.insert(apiToken).values({
     id,
     userId,
@@ -89,43 +92,44 @@ export async function createAPIToken(userId: string, name: string): Promise<stri
 
 export async function validateAPIToken(token: string): Promise<string | null> {
   const { db } = getPostgresClient();
-  
+
   const result = await db.select().from(apiToken).where(eq(apiToken.token, token)).limit(1);
-  
+
   if (result.length === 0) return null;
-  
+
   // Update last_used
   await db.update(apiToken)
     .set({ lastUsed: new Date() })
     .where(eq(apiToken.token, token));
-  
+
   return result[0].userId;
 }
 
 // Project limits by tier
 const PROJECT_LIMITS = {
   free: 1,
+  starter: 3,
   pro: 10,
-  business: 50,
+  business: 999,
 };
 
 export async function createProject(userId: string, name: string, domain: string): Promise<Project> {
   const { db } = getPostgresClient();
-  
+
   // Check user's subscription tier and project count
   const u = await getUserById(userId);
   if (!u) {
     throw new Error('User not found');
   }
-  
+
   const userProjects = await getUserProjects(userId);
   const tier = u.subscription_tier || 'free';
   const limit = PROJECT_LIMITS[tier as keyof typeof PROJECT_LIMITS] || PROJECT_LIMITS.free;
-  
+
   if (userProjects.length >= limit) {
     throw new Error(`Project limit reached for ${tier} plan. Upgrade to add more projects.`);
   }
-  
+
   const id = generateId("proj");
   const now = new Date();
 
@@ -150,12 +154,12 @@ export async function createProject(userId: string, name: string, domain: string
 
 export async function getUserProjects(userId: string): Promise<Project[]> {
   const { db } = getPostgresClient();
-  
+
   const results = await db.select()
     .from(project)
     .where(eq(project.userId, userId))
     .orderBy(desc(project.createdAt));
-  
+
   return results.map(p => ({
     id: p.id,
     user_id: p.userId,
@@ -168,14 +172,14 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
 
 export async function getProjectById(projectId: string, userId: string): Promise<Project | null> {
   const { db } = getPostgresClient();
-  
+
   const result = await db.select()
     .from(project)
     .where(and(eq(project.id, projectId), eq(project.userId, userId)))
     .limit(1);
-  
+
   if (result.length === 0) return null;
-  
+
   const p = result[0];
   return {
     id: p.id,
@@ -188,17 +192,21 @@ export async function getProjectById(projectId: string, userId: string): Promise
 }
 
 export async function updateUserStripeInfo(
-  userId: string, 
-  stripeCustomerId: string, 
-  subscriptionTier: string = 'free', 
+  userId: string,
+  stripeCustomerId: string,
+  subscriptionTier: string = 'free',
   subscriptionStatus: string = 'active'
 ): Promise<void> {
-  // Store Stripe info in user metadata - Better Auth handles the user table
-  // For now, this is a placeholder. You might want to add these fields to the user schema
-  console.log('Stripe info update - implement in Better Auth schema:', {
-    userId,
-    stripeCustomerId,
-    subscriptionTier,
-    subscriptionStatus
-  });
+  const { db } = getPostgresClient();
+
+  await db.update(user)
+    .set({
+      stripeCustomerId,
+      subscriptionTier,
+      subscriptionStatus,
+      updatedAt: new Date(),
+    })
+    .where(eq(user.id, userId));
+
+  console.log(`✅ Updated Stripe info for user ${userId}: tier=${subscriptionTier}, status=${subscriptionStatus}`);
 }

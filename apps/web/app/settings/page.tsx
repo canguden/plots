@@ -420,16 +420,53 @@ export default function SettingsPage() {
 
       {/* Billing Section */}
       <div className="border border-[#222] bg-[#111] rounded-lg">
-        <div className="px-6 py-4 border-b border-[#222]">
-          <h2 className="text-sm font-semibold text-white">Billing</h2>
+        <div className="px-6 py-4 border-b border-[#222] flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">Billing & Usage</h2>
+          {usage && usage.limit > 1000 && (
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/portal`, {
+                    method: 'POST',
+                    credentials: 'include',
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    window.location.href = data.url;
+                  } else {
+                    alert('Unable to open subscription management');
+                  }
+                } catch (e) {
+                  alert('Unable to open subscription management');
+                }
+              }}
+              className="text-xs bg-[#1a1a1a] text-white px-3 py-1.5 rounded border border-[#333] hover:border-[#555] transition-colors"
+            >
+              Manage Subscription
+            </button>
+          )}
         </div>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium text-white">
-                {usage && usage.limit === 1000 ? 'Free Plan' :
-                  usage && usage.limit === 10000 ? 'Starter Plan' :
-                    'Pro Plan'}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white">
+                  {usage && usage.limit === 1000 ? 'Free Plan' :
+                    usage && usage.limit === 10000 ? 'Starter Plan' :
+                      usage && usage.limit === 100000 ? 'Pro Plan' :
+                        usage && usage.limit === 1000000 ? 'Business Plan' :
+                          'Free Plan'}
+                </span>
+                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${usage && usage.limit > 1000
+                    ? 'bg-white/10 text-white'
+                    : 'bg-[#222] text-[#666]'
+                  }`}>
+                  {usage && usage.limit === 1000 ? 'FREE' :
+                    usage && usage.limit === 10000 ? 'STARTER' :
+                      usage && usage.limit === 100000 ? 'PRO' :
+                        usage && usage.limit === 1000000 ? 'BUSINESS' :
+                          'FREE'}
+                </span>
               </div>
               <div className="text-xs text-[#666] mt-1">
                 {usage ? `${usage.limit.toLocaleString()} events per month` : 'Loading...'}
@@ -452,7 +489,10 @@ export default function SettingsPage() {
               </div>
               <div className="w-full bg-[#1a1a1a] rounded-full h-2">
                 <div
-                  className="bg-white h-2 rounded-full"
+                  className={`h-2 rounded-full transition-all ${usage.percentage > 90 ? 'bg-red-500' :
+                      usage.percentage > 70 ? 'bg-yellow-500' :
+                        'bg-white'
+                    }`}
                   style={{ width: `${Math.min(usage.percentage, 100)}%` }}
                 />
               </div>
@@ -463,6 +503,11 @@ export default function SettingsPage() {
           ) : (
             <div className="bg-black border border-[#222] rounded-lg p-4">
               <div className="text-sm text-[#666]">Loading usage...</div>
+            </div>
+          )}
+          {usage && usage.limit === 1000 && (
+            <div className="text-xs text-[#666]">
+              Need more events? <a href="/pricing" className="text-white hover:underline">Compare plans →</a>
             </div>
           )}
         </div>
