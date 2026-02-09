@@ -27,27 +27,35 @@ async function fetcher<T>(endpoint: string): Promise<T> {
   return response.json();
 }
 
-export async function getOverview(range: string = "7d"): Promise<OverviewResponse> {
-  return fetcher<OverviewResponse>(`/api/overview?range=${range}`);
+export async function getOverview(range: string = "7d", projectId?: string): Promise<OverviewResponse> {
+  const query = projectId ? `?range=${range}&project=${projectId}` : `?range=${range}`;
+  return fetcher<OverviewResponse>(`/api/overview${query}`);
 }
 
-export async function getPages(range: string = "7d"): Promise<PagesResponse> {
-  return fetcher<PagesResponse>(`/pages?range=${range}`);
+export async function getPages(range: string = "7d", projectId?: string): Promise<PagesResponse> {
+  const query = projectId ? `?range=${range}&project=${projectId}` : `?range=${range}`;
+  return fetcher<PagesResponse>(`/api/pages${query}`);
 }
 
-export async function getReferrers(range: string = "7d"): Promise<ReferrersResponse> {
-  return fetcher<ReferrersResponse>(`/referrers?range=${range}`);
+export async function getReferrers(range: string = "7d", projectId?: string): Promise<ReferrersResponse> {
+  const query = projectId ? `?range=${range}&project=${projectId}` : `?range=${range}`;
+  return fetcher<ReferrersResponse>(`/api/referrers${query}`);
 }
 
-export async function getCountries(range: string = "7d"): Promise<CountriesResponse> {
-  return fetcher<CountriesResponse>(`/countries?range=${range}`);
+export async function getCountries(range: string = "7d", projectId?: string): Promise<CountriesResponse> {
+  const query = projectId ? `?range=${range}&project=${projectId}` : `?range=${range}`;
+  return fetcher<CountriesResponse>(`/api/countries${query}`);
 }
 
-export async function getDevices(range: string = "7d"): Promise<DevicesResponse> {
-  return fetcher<DevicesResponse>(`/devices?range=${range}`);
+export async function getDevices(range: string = "7d", projectId?: string): Promise<DevicesResponse> {
+  const query = projectId ? `?range=${range}&project=${projectId}` : `?range=${range}`;
+  return fetcher<DevicesResponse>(`/api/devices${query}`);
 }
 
-export async function getEvents(range: string = "7d"): Promise<EventsResponse> {
+export async function getEvents(range: string = "7d", projectId?: string): Promise<EventsResponse> {
+  const query = projectId ? `?range=${range}&project=${projectId}` : `?range=${range}`;
+  return fetcher<EventsResponse>(`/api/events${query}`);
+}
   return fetcher<EventsResponse>(`/events?range=${range}`);
 }
 

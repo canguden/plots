@@ -12,6 +12,8 @@ export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -20,19 +22,52 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  // Fetch dashboard data once authenticated
+  // Fetch projects first
   useEffect(() => {
     if (!user) return;
+
+    async function fetchProjects() {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.plots.sh';
+        const res = await fetch(`${apiUrl}/api/projects`, {
+          credentials: 'include',
+        });
+        
+        if (res.ok) {
+          const projectsData = await res.json();
+          setProjects(projectsData || []);
+          
+          // If no projects, redirect to onboarding
+          if (!projectsData || projectsData.length === 0) {
+            router.push('/onboarding');
+            return;
+          }
+          
+          // Select first project by default
+          setSelectedProject(projectsData[0].id);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch projects:", err);
+        setError("Failed to load projects");
+      }
+    }
+    
+    fetchProjects();
+  }, [user, router]);
+
+  // Fetch dashboard data once we have a project
+  useEffect(() => {
+    if (!user || !selectedProject) return;
 
     async function fetchData() {
       try {
         const range = "7d";
         const [overview, pages, referrers, countries, devices] = await Promise.all([
-          getOverview(range),
-          getPages(range),
-          getReferrers(range),
-          getCountries(range),
-          getDevices(range),
+          getOverview(range, selectedProject),
+          getPages(range, selectedProject),
+          getReferrers(range, selectedProject),
+          getCountries(range, selectedProject),
+          getDevices(range, selectedProject),
         ]);
         
         setData({ overview, pages, referrers, countries, devices });
@@ -46,7 +81,7 @@ export default function DashboardPage() {
     }
     
     fetchData();
-  }, [user]);
+  }, [user, selectedProject]);
 
   // Loading state
   if (loading || !user) {

@@ -46,3 +46,22 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
+
+// Project management tables
+export const project = pgTable("project", {
+  id: text("id").primaryKey(),
+  userId: text("userId").notNull().references(() => user.id),
+  name: text("name").notNull(),
+  domain: text("domain").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const apiToken = pgTable("apiToken", {
+  id: text("id").primaryKey(),
+  userId: text("userId").notNull().references(() => user.id),
+  token: text("token").notNull().unique(),
+  name: text("name").notNull(),
+  lastUsed: timestamp("lastUsed"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});

@@ -1,7 +1,12 @@
 // ClickHouse client and query utilities
 import { createClient, ClickHouseClient } from "@clickhouse/client";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "./db-schema";
 
 let clickhouse: ClickHouseClient | null = null;
+let pgClient: ReturnType<typeof postgres> | null = null;
+let pgDb: ReturnType<typeof drizzle> | null = null;
 
 export function getClickHouseClient(): ClickHouseClient {
   if (!clickhouse) {
@@ -19,6 +24,18 @@ export function getClickHouseClient(): ClickHouseClient {
   }
   
   return clickhouse;
+}
+
+export function getPostgresClient() {
+  if (!pgClient) {
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      throw new Error("PostgreSQL DATABASE_URL not configured");
+    }
+    pgClient = postgres(url);
+    pgDb = drizzle(pgClient, { schema });
+  }
+  return { client: pgClient, db: pgDb! };
 }
 
 export async function ensureSchema() {

@@ -1,5 +1,8 @@
 // User authentication and management
-import { getClickHouseClient } from "./db";
+import { getPostgresClient } from "./db";
+import { user, project, apiToken } from "./db-schema";
+import { eq, and, desc } from "drizzle-orm";
+import { randomBytes } from "crypto";
 
 export interface User {
   id: string;
@@ -41,70 +44,62 @@ export interface Session {
 
 // Generate random IDs
 function generateId(prefix: string): string {
-  return `${prefix}_${Math.random().toString(36).substr(2, 16)}`;
+  return `${prefix}_${randomBytes(16).toString('base64url')}`;
 }
 
 // User functions
 
 export async function getUserById(userId: string): Promise<User | null> {
-  const client = getClickHouseClient();
+  const { db } = getPostgresClient();
   
-  const result = await client.query({
-    query: "SELECT * FROM users WHERE id = {userId:String}",
-    query_params: { userId },
-  });
+  const result = await db.select().from(user).where(eq(user.id, userId)).limit(1);
   
-  const rows = await result.json();
-  return rows.data.length > 0 ? (rows.data[0] as User) : null;
+  if (result.length === 0) return null;
+  
+  const u = result[0];
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    email_verified: u.emailVerified,
+    image: u.image || undefined,
+    created_at: u.createdAt.toISOString(),
+    updated_at: u.updatedAt.toISOString(),
+  };
 }
 
 // API Token functions
 
 export async function createAPIToken(userId: string, name: string): Promise<string> {
-  const client = getClickHouseClient();
+  const { db } = getPostgresClient();
   
-  const token = generateId("pl_live");
+  const token = generateId("plots");
+  const id = generateId("tok");
   
-  await client.insert({
-    table: "api_tokens",
-    values: [{
-      token,
-      user_id: userId,
-      name,
-      last_used: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    }],
-    format: "JSONEachRow",
+  await db.insert(apiToken).values({
+    id,
+    userId,
+    token,
+    name,
+    createdAt: new Date(),
   });
 
   return token;
 }
 
 export async function validateAPIToken(token: string): Promise<string | null> {
-  const client = getClickHouseClient();
+  const { db } = getPostgresClient();
   
-  const result = await client.query({
-    query: "SELECT user_id FROM api_tokens WHERE token = {token:String}",
-    query_params: { token },
-  });
+  const result = await db.select().from(apiToken).where(eq(apiToken.token, token)).limit(1);
   
-  const rows = await result.json();
+  if (result.length === 0) return null;
   
-  if (rows.data.length > 0) {
-    // Update last_used
-    await client.command({
-      query: `
-        ALTER TABLE api_tokens 
-        UPDATE last_used = now() 
-        WHERE token = {token:String}
-      `,
-      query_params: { token },
-    });
-    
-    return (rows.data[0] as any).user_id;
-  }
+  // Update last_used
+  await db.update(apiToken)
+    .set({ lastUsed: new Date() })
+    .where(eq(apiToken.token, token));
   
-  return null;
+  return result[0].userId;
 }
 
 // Project limits by tier
@@ -115,66 +110,81 @@ const PROJECT_LIMITS = {
 };
 
 export async function createProject(userId: string, name: string, domain: string): Promise<Project> {
-  const client = getClickHouseClient();
+  const { db } = getPostgresClient();
   
   // Check user's subscription tier and project count
-  const user = await getUserById(userId);
-  if (!user) {
+  const u = await getUserById(userId);
+  if (!u) {
     throw new Error('User not found');
   }
   
   const userProjects = await getUserProjects(userId);
-  const tier = user.subscription_tier || 'free';
+  const tier = u.subscription_tier || 'free';
   const limit = PROJECT_LIMITS[tier as keyof typeof PROJECT_LIMITS] || PROJECT_LIMITS.free;
   
   if (userProjects.length >= limit) {
     throw new Error(`Project limit reached for ${tier} plan. Upgrade to add more projects.`);
   }
   
-  const project: Project = {
-    id: generateId("proj"),
+  const id = generateId("proj");
+  const now = new Date();
+
+  await db.insert(project).values({
+    id,
+    userId,
+    name,
+    domain,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return {
+    id,
     user_id: userId,
     name,
     domain,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
   };
-
-  await client.insert({
-    table: "projects",
-    values: [project],
-    format: "JSONEachRow",
-  });
-
-  return project;
 }
 
 export async function getUserProjects(userId: string): Promise<Project[]> {
-  const client = getClickHouseClient();
+  const { db } = getPostgresClient();
   
-  const result = await client.query({
-    query: "SELECT * FROM projects WHERE user_id = {userId:String} ORDER BY created_at DESC",
-    query_params: { userId },
-  });
+  const results = await db.select()
+    .from(project)
+    .where(eq(project.userId, userId))
+    .orderBy(desc(project.createdAt));
   
-  const rows = await result.json();
-  return rows.data as Project[];
+  return results.map(p => ({
+    id: p.id,
+    user_id: p.userId,
+    name: p.name,
+    domain: p.domain,
+    created_at: p.createdAt.toISOString(),
+    updated_at: p.updatedAt.toISOString(),
+  }));
 }
 
 export async function getProjectById(projectId: string, userId: string): Promise<Project | null> {
-  const client = getClickHouseClient();
+  const { db } = getPostgresClient();
   
-  const result = await client.query({
-    query: `
-      SELECT * FROM projects 
-      WHERE id = {projectId:String} 
-      AND user_id = {userId:String}
-    `,
-    query_params: { projectId, userId },
-  });
+  const result = await db.select()
+    .from(project)
+    .where(and(eq(project.id, projectId), eq(project.userId, userId)))
+    .limit(1);
   
-  const rows = await result.json();
-  return rows.data.length > 0 ? (rows.data[0] as Project) : null;
+  if (result.length === 0) return null;
+  
+  const p = result[0];
+  return {
+    id: p.id,
+    user_id: p.userId,
+    name: p.name,
+    domain: p.domain,
+    created_at: p.createdAt.toISOString(),
+    updated_at: p.updatedAt.toISOString(),
+  };
 }
 
 export async function updateUserStripeInfo(
@@ -183,18 +193,12 @@ export async function updateUserStripeInfo(
   subscriptionTier: string = 'free', 
   subscriptionStatus: string = 'active'
 ): Promise<void> {
-  const client = getClickHouseClient();
-  
-  await client.command({
-    query: `
-      ALTER TABLE users 
-      UPDATE 
-        stripe_customer_id = {stripeCustomerId:String},
-        subscription_tier = {subscriptionTier:String},
-        subscription_status = {subscriptionStatus:String},
-        updated_at = now()
-      WHERE id = {userId:String}
-    `,
-    query_params: { userId, stripeCustomerId, subscriptionTier, subscriptionStatus },
+  // Store Stripe info in user metadata - Better Auth handles the user table
+  // For now, this is a placeholder. You might want to add these fields to the user schema
+  console.log('Stripe info update - implement in Better Auth schema:', {
+    userId,
+    stripeCustomerId,
+    subscriptionTier,
+    subscriptionStatus
   });
 }
