@@ -14,9 +14,9 @@ interface Props {
 
 export function AnalyticsChart({ data, height = 200 }: Props) {
   const chartData = data.map(point => ({
-    date: new Date(point.date).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
+    date: new Date(point.date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
     }),
     visitors: point.value,
   }));
@@ -25,14 +25,17 @@ export function AnalyticsChart({ data, height = 200 }: Props) {
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-        <XAxis 
-          dataKey="date" 
-          stroke="#666" 
+        <XAxis
+          dataKey="date"
+          stroke="#666"
           style={{ fontSize: '12px' }}
+          padding={{ left: 10, right: 10 }}
         />
-        <YAxis 
-          stroke="#666" 
+        <YAxis
+          stroke="#666"
           style={{ fontSize: '12px' }}
+          domain={[0, 'auto']}
+          allowDataOverflow={false}
         />
         <Tooltip
           contentStyle={{
@@ -48,8 +51,9 @@ export function AnalyticsChart({ data, height = 200 }: Props) {
           dataKey="visitors"
           stroke="#fff"
           strokeWidth={2}
-          dot={{ fill: '#fff', r: 3 }}
-          activeDot={{ r: 5 }}
+          dot={{ fill: '#000', stroke: '#fff', strokeWidth: 2, r: 4 }}
+          activeDot={{ r: 6, strokeWidth: 0 }}
+          connectNulls
         />
       </LineChart>
     </ResponsiveContainer>

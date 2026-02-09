@@ -40,22 +40,22 @@ export function Referrers({ timeRange }: Props) {
       >
         <text fg="magenta"><strong>Referrers ({data.total})</strong></text>
         <box height={1} />
-        
+
         <box flexDirection="column" gap={1}>
           <box flexDirection="row">
             <text width={50}><strong>Source</strong></text>
             <text width={12}><strong>Visitors</strong></text>
             <text width={12}><strong>Views</strong></text>
           </box>
-          
+
           {data.referrers.map((ref, i) => (
             <box key={i} flexDirection="row">
-              <text width={50}>{ref.domain || "Direct"}</text>
+              <text width={50}>{ref.domain}</text>
               <text width={12}>{ref.visitors}</text>
               <text width={12}>{ref.pageviews}</text>
             </box>
           ))}
-          
+
           {data.referrers.length === 0 && (
             <text fg="gray">No referrer data yet</text>
           )}

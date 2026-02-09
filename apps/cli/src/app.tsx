@@ -174,9 +174,10 @@ export function App() {
 
       // Date range shortcuts
       if (key.name === "today" || key.name === "t") setDateRange("today");
+      if (key.name === "yesterday" || key.name === "y") setDateRange("yesterday");
       if (key.name === "7" || key.name === "w") setDateRange("7d");
       if (key.name === "3" || key.name === "m") setDateRange("30d");
-      if (key.name === "y") setDateRange("year");
+      if (key.name === "year") setDateRange("year");
 
       // Back to project selection
       if (key.name === "escape") {
@@ -203,8 +204,10 @@ export function App() {
 
   const dateRangeLabel: Record<DateRange, string> = {
     "today": "Today",
+    "yesterday": "Yesterday",
     "7d": "Last 7 days",
-    "30d": "Last 30 days"
+    "30d": "Last 30 days",
+    "year": "Last year"
   };
   const dateRangeLabelText = dateRangeLabel[dateRange];
 
@@ -291,10 +294,10 @@ export function App() {
         {/* Date Range */}
         <box padding={1} paddingTop={0} paddingBottom={0} flexDirection="row" gap={2} backgroundColor="#000000">
           <text><span fg="#8b949e">Range:</span></text>
-          {(["today", "7d", "30d"] as DateRange[]).map((range) => (
+          {(["today", "yesterday", "7d", "30d"] as DateRange[]).map((range) => (
             <text key={range}>
               <span fg={dateRange === range ? "#58a6ff" : "#6e7681"}>
-                {range === "today" ? "[D]" : range === "7d" ? "[W]" : "[M]"} {range}
+                {range === "today" ? "[T]" : range === "yesterday" ? "[Y]" : range === "7d" ? "[W]" : "[M]"} {range}
               </span>
             </text>
           ))}
@@ -441,10 +444,10 @@ function OverviewView({ pages, countries, referrers }: { pages: PageData[], coun
             ) : (
               referrers.slice(0, 7).map((ref, i) => {
                 const maxLen = 22;
-                const displayName = ref.referrer || "Direct";
+                const displayName = ref.domain;
                 const truncated = displayName.length > maxLen ? displayName.substring(0, maxLen - 1) + "…" : displayName;
                 return (
-                  <box key={ref.referrer || "direct"} flexDirection="row">
+                  <box key={ref.domain} flexDirection="row">
                     <box width={24}>
                       <text><span fg={i === 0 ? "#56d364" : "#c9d1d9"}>{truncated}</span></text>
                     </box>

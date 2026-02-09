@@ -30,11 +30,15 @@ function getDateRange(range: string): { start: string; end: string } {
       start.setHours(0, 0, 0, 0);
       break;
     case "yesterday":
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-      start = yesterday;
-      break;
+      start = new Date();
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      const yesterdayEnd = new Date();
+      yesterdayEnd.setHours(0, 0, 0, 0);
+      return {
+        start: formatDateForClickHouse(start),
+        end: formatDateForClickHouse(yesterdayEnd)
+      };
     case "7d":
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -225,16 +229,15 @@ export async function getReferrers(
   const result = await client.query({
     query: `
       SELECT
-        referrer as domain,
+        if(referrer = '', 'Direct', referrer) as domain,
         count(DISTINCT session_id) as visitors,
         count(*) as pageviews
       FROM events
       WHERE project_id = {projectId: String}
         AND ts >= {start: DateTime}
         AND ts <= {end: DateTime}
-        AND referrer != ''
       GROUP BY domain
-      ORDER BY visitors DESC
+      ORDER BY (domain = 'Direct') DESC, visitors DESC
     `,
     query_params: { projectId, start, end },
     format: "JSONEachRow",
