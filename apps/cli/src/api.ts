@@ -20,7 +20,9 @@ async function fetcher<T>(endpoint: string): Promise<T> {
     throw new Error("Not logged in. Run 'plots login' first.");
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const url = `${API_BASE}${endpoint}`;
+
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -28,6 +30,10 @@ async function fetcher<T>(endpoint: string): Promise<T> {
 
   if (!response.ok) {
     if (response.status === 401) {
+      const body = await response.text().catch(() => "");
+      console.error(`[Debug] 401 at ${url}`);
+      console.error(`[Debug] Token: ${token.substring(0, 15)}...`);
+      console.error(`[Debug] Response: ${body}`);
       throw new Error("Session expired. Run 'plots login' again.");
     }
     throw new Error(`API Error: ${response.statusText}`);
