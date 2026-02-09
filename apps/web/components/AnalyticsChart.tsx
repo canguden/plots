@@ -13,13 +13,17 @@ interface Props {
 }
 
 export function AnalyticsChart({ data, height = 200 }: Props) {
-  const chartData = data.map(point => ({
-    date: new Date(point.date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    }),
-    visitors: point.value,
-  }));
+  const chartData = data.map(point => {
+    const date = new Date(point.date);
+    const label = data.length < 48
+      ? date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+      : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    return {
+      date: label,
+      visitors: point.value,
+    };
+  });
 
   return (
     <ResponsiveContainer width="100%" height={height}>
