@@ -1,4 +1,14 @@
 // Hono backend - main entry point
+// Log immediately to confirm container startup
+console.log("⏳ API module loading...");
+console.log("📦 Environment check:", {
+  NODE_ENV: process.env.NODE_ENV,
+  hasDbUrl: !!process.env.DATABASE_URL,
+  hasClickhouse: !!process.env.CLICKHOUSE_HOST,
+  hasAuthSecret: !!process.env.AUTH_SECRET,
+  apiUrl: process.env.API_URL || "(not set)",
+});
+
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -35,7 +45,6 @@ const app = new Hono<{ Variables: Variables }>();
 
 // Middleware
 app.use("*", logger());
-console.log("🚀 Plots API starting up...");
 app.use("*", cors({
   origin: (origin) => {
     const allowed = [
